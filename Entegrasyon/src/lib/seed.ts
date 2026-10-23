@@ -10,6 +10,7 @@ import {
   shifts,
 } from "@/db/face-schema";
 import { parseIstanbul, recentWeekdays, todayISO } from "@/lib/time";
+import { eq } from "drizzle-orm";
 
 let seedPromise: Promise<void> | null = null;
 
@@ -151,7 +152,7 @@ async function runSeed() {
       departmentId: dept.IK.id,
       shiftId: shiftByName["Ofis Mesaisi"].id,
       title: "İK Müdürü",
-      photoUrl: "/portraits/elif.jpg",
+      photoUrl: svgAvatar("ED", 190),
       hireDate: "2018-03-12",
     },
     {
@@ -163,7 +164,7 @@ async function runSeed() {
       departmentId: dept.URT.id,
       shiftId: shiftByName["Gündüz Vardiyası"].id,
       title: "Üretim Şefi",
-      photoUrl: "/portraits/mehmet.jpg",
+      photoUrl: svgAvatar("MK", 25),
       hireDate: "2016-09-01",
     },
     {
@@ -175,7 +176,7 @@ async function runSeed() {
       departmentId: dept.MUH.id,
       shiftId: shiftByName["Ofis Mesaisi"].id,
       title: "Bordro Uzmanı",
-      photoUrl: "/portraits/ayse.jpg",
+      photoUrl: svgAvatar("AY", 45),
       hireDate: "2019-01-21",
     },
     {
@@ -187,7 +188,7 @@ async function runSeed() {
       departmentId: dept.IT.id,
       shiftId: shiftByName["Ofis Mesaisi"].id,
       title: "Yazılım Geliştirici",
-      photoUrl: "/portraits/can.jpg",
+      photoUrl: svgAvatar("CÖ", 265),
       hireDate: "2021-06-14",
     },
     {
@@ -199,7 +200,7 @@ async function runSeed() {
       departmentId: dept.GUV.id,
       shiftId: shiftByName["Gündüz Vardiyası"].id,
       title: "Güvenlik Amiri",
-      photoUrl: "/portraits/zeynep.jpg",
+      photoUrl: svgAvatar("ZA", 160),
       hireDate: "2017-11-03",
     },
     {
@@ -211,7 +212,7 @@ async function runSeed() {
       departmentId: dept.IT.id,
       shiftId: shiftByName["Ofis Mesaisi"].id,
       title: "Sistem Yöneticisi",
-      photoUrl: "/portraits/emre.jpg",
+      photoUrl: svgAvatar("EÇ", 320),
       hireDate: "2020-02-10",
     },
     {
@@ -223,7 +224,7 @@ async function runSeed() {
       departmentId: dept.YON.id,
       shiftId: shiftByName["Ofis Mesaisi"].id,
       title: "Yönetim Asistanı",
-      photoUrl: "/portraits/selin.jpg",
+      photoUrl: svgAvatar("SA", 210),
       hireDate: "2022-04-18",
     },
     {
@@ -235,7 +236,7 @@ async function runSeed() {
       departmentId: dept.URT.id,
       shiftId: shiftByName["Gündüz Vardiyası"].id,
       title: "CNC Operatörü",
-      photoUrl: "/portraits/burak.jpg",
+      photoUrl: svgAvatar("BŞ", 95),
       hireDate: "2019-08-26",
     },
     {
@@ -247,7 +248,7 @@ async function runSeed() {
       departmentId: dept.IT.id,
       shiftId: shiftByName["Ofis Mesaisi"].id,
       title: "Ağ Uzmanı",
-      photoUrl: "/portraits/deniz.jpg",
+      photoUrl: svgAvatar("DK", 15),
       hireDate: "2023-01-09",
     },
     {
@@ -259,7 +260,7 @@ async function runSeed() {
       departmentId: dept.MUH.id,
       shiftId: shiftByName["Ofis Mesaisi"].id,
       title: "Muhasebe Uzmanı",
-      photoUrl: "/portraits/fatma.jpg",
+      photoUrl: svgAvatar("FA", 285),
       hireDate: "2018-10-30",
     },
     {
@@ -271,7 +272,7 @@ async function runSeed() {
       departmentId: dept.LOJ.id,
       shiftId: shiftByName["Gündüz Vardiyası"].id,
       title: "Depo Sorumlusu",
-      photoUrl: "/portraits/hakan.jpg",
+      photoUrl: svgAvatar("HY", 130),
       hireDate: "2015-05-04",
     },
     {
@@ -283,7 +284,7 @@ async function runSeed() {
       departmentId: dept.URT.id,
       shiftId: shiftByName["Gündüz Vardiyası"].id,
       title: "Kalite Kontrol",
-      photoUrl: "/portraits/merve.jpg",
+      photoUrl: svgAvatar("MP", 55),
       hireDate: "2024-02-12",
     },
   ];
@@ -598,9 +599,48 @@ async function runSeed() {
   if (logValues.length) await db.insert(accessLogs).values(logValues);
 }
 
+/**
+ * KVKK-dostu, dosyasız profil fotoğrafı: harf baş harfleri + aurora gradyanı.
+ * Eksik/gömülü olmayan `/portraits/…` yollarını da onarır (bkz. repair).
+ */
+function svgAvatar(initials: string, hue: number): string {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">` +
+    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+    `<stop offset="0" stop-color="hsl(${hue} 85% 62%)"/>` +
+    `<stop offset="1" stop-color="hsl(${(hue + 55) % 360} 85% 46%)"/>` +
+    `</linearGradient></defs>` +
+    `<rect width="256" height="256" rx="56" fill="url(#g)"/>` +
+    `<text x="128" y="160" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="84" font-weight="700" fill="#0b1020" opacity="0.88">${initials}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Hiç commit edilmemiş `/portraits/*.jpg` yollarını (eski örnek veri)
+ * dosyasız SVG karşılıklarıyla değiştirir. Her açılışta ucuz bir kontrol.
+ */
+async function repairBrokenPortraits() {
+  const rows = await db.select({
+    id: employees.id,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+    photoUrl: employees.photoUrl,
+  }).from(employees);
+  for (const row of rows) {
+    if (!row.photoUrl || !row.photoUrl.startsWith("/portraits/")) continue;
+    const initials = `${(row.firstName ?? "").slice(0, 1)}${(row.lastName ?? "").slice(0, 1)}`.toLocaleUpperCase("tr");
+    await db
+      .update(employees)
+      .set({ photoUrl: svgAvatar(initials || "P", (row.id * 47) % 360) })
+      .where(eq(employees.id, row.id));
+  }
+}
+
 export async function ensureSeed() {
   if (!seedPromise) {
     seedPromise = (async () => {
+      await repairBrokenPortraits().catch(() => {});
       const existing = await db.select({ id: departments.id }).from(departments).limit(1);
       if (existing.length > 0) return;
       await runSeed();

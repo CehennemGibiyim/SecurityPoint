@@ -292,6 +292,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "group flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition",
                     active
@@ -320,6 +321,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "group flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition",
                     active
@@ -359,7 +361,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <LiveClock className="text-right" />
           </header>
 
-          <div className="flex gap-2 overflow-x-auto border-b border-white/5 px-3 py-2 lg:hidden">
+          <div className="mobile-chip-nav flex gap-2 overflow-x-auto border-b border-white/5 px-3 py-2 lg:hidden">
             {ALL_NAV.map((item) => {
               const active = isRouteActive(pathname, item);
               const Icon = item.icon;
@@ -367,6 +369,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs",
                     active

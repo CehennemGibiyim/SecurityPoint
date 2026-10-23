@@ -5,7 +5,8 @@ import {
   announcements, dbBackups, dutyColumns,
 } from "@/db/schema";
 import { sortByName } from "@/lib/shared";
-import { and, eq, gte, lte, inArray, desc } from "drizzle-orm";
+import { and, eq, gte, lte, inArray, desc, sql } from "drizzle-orm";
+import { schemaUpdateStatements } from "@/lib/schema-updates";
 import { getShiftRangeMetrics } from "@/lib/puantaj-engine";
 import { daysBetween } from "@/lib/shared";
 
@@ -15,9 +16,18 @@ import { daysBetween } from "@/lib/shared";
 // ═════════════════════════════════════════════════════════════
 
 let seeded = false;
+let migrated = false;
 
 export async function ensureSeeded(): Promise<void> {
   if (seeded) return;
+  // Tarayıcı sürümüyle aynı: süreç başına bir kez, idempotent şema güncellemeleri.
+  // (Var olmayan sütun/tabloları ekler; veri silmez — bkz. schema-updates.ts)
+  if (!migrated) {
+    await db.transaction(async (tx) => {
+      for (const statement of schemaUpdateStatements()) await tx.execute(sql.raw(statement));
+    });
+    migrated = true;
+  }
   const existing = await db.select({ id: departments.id }).from(departments).limit(1);
   if (existing.length > 0) {
     seeded = true;

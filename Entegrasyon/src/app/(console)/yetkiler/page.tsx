@@ -16,6 +16,7 @@ type Perm = {
   startTime: string;
   endTime: string;
   isActive: boolean;
+  source?: string;
   employeeName: string;
   employeeNo: string | null;
   doorName: string;
@@ -33,6 +34,8 @@ export default function YetkilerPage() {
     endTime: "19:00",
     daysOfWeek: [1, 2, 3, 4, 5] as number[],
   });
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   async function load() {
     const [perm, emp, door] = await Promise.all([
@@ -75,6 +78,25 @@ export default function YetkilerPage() {
   async function remove(id: number) {
     await jsonFetch(`/api/permissions/${id}`, { method: "DELETE" });
     await load();
+  }
+
+  async function syncShifts() {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const res = await jsonFetch<{ ok: boolean; created: number; updated: number; removed: number; doors: number }>(
+        "/api/permissions",
+        { method: "POST", body: JSON.stringify({ action: "sync_shifts" }) },
+      );
+      setSyncMsg(
+        `Vardiya senkronu tamam: ${res.created} yeni, ${res.updated} güncellendi, ${res.removed} kaldırıldı (${res.doors} aktif kapı).`,
+      );
+      await load();
+    } catch {
+      setSyncMsg("Vardiya senkronu başarısız oldu.");
+    } finally {
+      setSyncing(false);
+    }
   }
 
   return (
@@ -125,7 +147,16 @@ export default function YetkilerPage() {
             </button>
           ))}
         </div>
-        <Button className="mt-4" onClick={() => void createPerm()}>Yetki tanımla</Button>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button onClick={() => void createPerm()}>Yetki tanımla</Button>
+          <Button tone="ghost" disabled={syncing} onClick={() => void syncShifts()}>
+            {syncing ? "Senkronize ediliyor…" : "↻ Vardiyalardan senkronize et"}
+          </Button>
+          {syncMsg ? <span className="text-xs text-cyan-300">{syncMsg}</span> : null}
+        </div>
+        <p className="mt-2 text-[11px] text-slate-500">
+          Vardiya senkronu: personelin Puantaj26 vardiya saatleri kapı yetkisi olarak yazılır (7/24 değil — vardiyası dışında geçiş reddedilir). Manuel yetkiler korunur.
+        </p>
       </section>
 
       <div className="orion-card overflow-x-auto rounded-3xl p-5">
@@ -146,6 +177,9 @@ export default function YetkilerPage() {
                 <td className="py-3">
                   <div className="text-white">{item.employeeName}</div>
                   <div className="text-xs text-slate-500">{item.employeeNo}</div>
+                  <div className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] ${item.source === "vardiya" ? "bg-emerald-400/15 text-emerald-300" : "bg-white/5 text-slate-400"}`}>
+                    {item.source === "vardiya" ? "Vardiyadan" : "Manuel"}
+                  </div>
                 </td>
                 <td>
                   {item.doorName}

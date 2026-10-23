@@ -353,6 +353,8 @@ export const doorPermissions = pgTable(
     validFrom: text("valid_from"),
     validTo: text("valid_to"),
     isActive: boolean("is_active").notNull().default(true),
+    /** "manual" | "vardiya" — vardiya senkronu tarafından üretilen yetkileri ayırır. */
+    source: text("source").notNull().default("manual"),
   },
   (t) => [
     index("perm_employee_idx").on(t.employeeId),

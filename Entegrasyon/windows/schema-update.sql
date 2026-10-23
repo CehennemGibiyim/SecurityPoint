@@ -18,6 +18,8 @@ ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS avatar_mime text;
 ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS avatar_updated_at timestamptz;
 ALTER TABLE public.shift_schedules ADD COLUMN IF NOT EXISTS column_key text;
 ALTER TABLE public.duty_columns ADD COLUMN IF NOT EXISTS staff_group text NOT NULL DEFAULT 'SAGLIK';
+ALTER TABLE public.door_permissions ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'manual';
 INSERT INTO public.schema_versions (id) VALUES ('2026-01-settings-import') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.schema_versions (id) VALUES ('2026-01-permission-source') ON CONFLICT (id) DO NOTHING;
 
 COMMIT;

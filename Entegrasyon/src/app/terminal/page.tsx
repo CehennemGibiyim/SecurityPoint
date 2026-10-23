@@ -17,6 +17,17 @@ import { Avatar, Badge, Button, cn } from "@/components/ui";
 import { jsonFetch } from "@/lib/api-client";
 import { beep } from "@/lib/face-client";
 import { formatTimeTr } from "@/lib/time";
+import {
+  cacheDoorsSnapshot,
+  cachePermissionsSnapshot,
+  flushQueue,
+  offlineEvaluate,
+  pendingCount,
+  queueEvent,
+  readDoorsSnapshot,
+  readPermissionsSnapshot,
+  type CachedPermission,
+} from "@/lib/terminal-online";
 import type { AccessAction, AccessResponse, BreakType, DoorPublic } from "@/lib/types";
 
 const MODES: Array<{ id: AccessAction; label: string; hint: string; icon: typeof ScanFace }> = [
@@ -39,12 +50,51 @@ export default function TerminalPage() {
   const [sicil, setSicil] = useState("");
   const [result, setResult] = useState<AccessResponse | null>(null);
   const [busy, setBusy] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const [queued, setQueued] = useState(0);
 
+  // Ağ kesintisi tamponu: kapı + yetki anlık görüntüsü al, kuyruğu boşalt;
+  // bağlantı koptuysa son bilinen listeyle devam et.
   useEffect(() => {
-    void jsonFetch<{ items: DoorPublic[] }>("/api/doors").then((data) => {
-      setDoors(data.items);
-      setDoorId(data.items[0]?.id ?? null);
-    });
+    let alive = true;
+    void (async () => {
+      try {
+        const data = await jsonFetch<{ items: DoorPublic[] }>("/api/doors");
+        if (!alive) return;
+        setDoors(data.items);
+        setDoorId((prev) => prev ?? data.items[0]?.id ?? null);
+        cacheDoorsSnapshot(data.items);
+        setOffline(false);
+        try {
+          const perms = await jsonFetch<{ items: CachedPermission[] }>("/api/permissions");
+          if (alive && Array.isArray(perms.items) && perms.items.length) {
+            cachePermissionsSnapshot(perms.items);
+          }
+        } catch { /* yetki anlık görüntüsü opsiyonel */ }
+        const synced = await flushQueue();
+        if (alive && synced > 0) setQueued(pendingCount());
+      } catch {
+        const snap = readDoorsSnapshot();
+        if (alive && snap?.doors?.length) {
+          setDoors(snap.doors as DoorPublic[]);
+          setDoorId((prev) => prev ?? (snap.doors[0] as DoorPublic)?.id ?? null);
+        }
+        if (alive) setOffline(true);
+      }
+      if (alive) setQueued(pendingCount());
+    })();
+    const onOnline = () => {
+      setOffline(false);
+      void flushQueue().then(() => setQueued(pendingCount()));
+    };
+    const onOffline = () => setOffline(true);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      alive = false;
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
   }, []);
 
   const door = useMemo(() => doors.find((item) => item.id === doorId) ?? null, [doors, doorId]);
@@ -69,21 +119,34 @@ export default function TerminalPage() {
       beep(response.ok);
       setResult(response);
       if (response.ok) setSicil("");
-    } catch (error) {
+    } catch {
+      // ÇEVİMDIŞI: son bilinen yetki listesiyle değerlendir, olayı kuyruğa al.
+      // Bağlantı geri gelince flushQueue() olayı /api/offline-queue'a yazar.
+      const snap = readPermissionsSnapshot();
+      const verdict = snap ? offlineEvaluate(snap.perms, sicil.trim(), doorId) : null;
+      const count = queueEvent(doorId, { action, breakType, employeeNo: sicil.trim() });
+      setQueued(count);
+      setOffline(true);
+      beep(verdict?.ok ?? false);
       setResult({
-        ok: false,
-        result: "denied",
+        ok: verdict?.ok ?? false,
+        result: verdict?.ok ? "granted" : "denied",
         eventType: action,
-        reason: error instanceof Error ? error.message : "Hata",
-        message: error instanceof Error ? error.message : "Hata",
-        doorUnlocked: false,
-        confidence: null,
+        reason: verdict?.reason ?? "Çevrimdışı: yetki listesi önbellekte yok — olay kuyruğa alındı.",
+        message: verdict
+          ? verdict.ok
+            ? `${verdict.employeeName ?? "Hoş geldiniz"} — kapı açıldı (ÇEVRİMDIŞI · son yetki listesi). Olay kuyruğa alındı; bağlantı gelince sunucu kaydına düşecek.`
+            : verdict.reason
+          : "Sunucuya ulaşılamıyor — olay kuyruğa alındı; bağlantı gelince sunucu kaydına düşecek.",
+        doorUnlocked: verdict?.ok ?? false,
+        confidence: verdict?.ok ? 100 : null,
         matchDistance: null,
         employee: null,
         door: null,
         attendance: null,
         at: new Date().toISOString(),
       });
+      if (verdict?.ok) setSicil("");
     } finally {
       setBusy(false);
     }
@@ -109,7 +172,14 @@ export default function TerminalPage() {
               Canlı yüz okuma terminali
             </p>
           </div>
-          <Badge tone="gold">{door?.name ?? "Kapı seçin"}</Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge tone="gold">{door?.name ?? "Kapı seçin"}</Badge>
+            {offline ? (
+              <Badge tone="bad">ÇEVRİMDIŞI{queued ? ` · kuyruk ${queued}` : ""}</Badge>
+            ) : queued > 0 ? (
+              <Badge tone="warn">Kuyrukta {queued} olay</Badge>
+            ) : null}
+          </div>
         </header>
 
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">

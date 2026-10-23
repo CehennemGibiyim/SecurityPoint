@@ -10,7 +10,9 @@ import {
   leaveRequests,
   securityAlarms,
   shifts,
+  visitors,
 } from "@/db/face-schema";
+import { appSettings } from "@/db/schema";
 import {
   confidenceFromDistance,
   euclidean,
@@ -169,6 +171,94 @@ async function identifyEmployee(input: AccessRequest) {
   return { employee: null, confidence: 0, matchDistance: null, unknownFace: false };
 }
 
+/**
+ * Aktif acil durum kilit açma protokolü (app_settings.data.emergency).
+ * `until` süresi dolmuşsa protokol kendiliğinden pasif sayılır.
+ */
+type EmergencyState = { doorIds: number[] | "all"; until: string; by: string };
+
+async function activeEmergency(): Promise<EmergencyState | null> {
+  const row = (await db.select().from(appSettings).where(eq(appSettings.id, "global")))[0];
+  const data = row?.data as unknown as { emergency?: EmergencyState } | null | undefined;
+  const em = data?.emergency;
+  if (!em || !em.until || Number.isNaN(new Date(em.until).getTime())) return null;
+  if (new Date(em.until).getTime() <= Date.now()) return null;
+  return em;
+}
+
+/**
+ * Ziyaretçi tek geçişlik QR akışı: süre, kapı ve durum kontrolü sonrası
+ * başarılı geçiş QR'ı düşürür (tek geçişlik). Personel bulunamadıktan
+ * sonra çağrılır; ziyaretçi değilse `null` döner (normal reddet akışı sürer).
+ */
+async function processVisitorPass(
+  input: AccessRequest,
+  door: typeof doors.$inferSelect,
+  now: Date,
+  doorInfo: { id: number; name: string; code: string; location: string; type: string },
+): Promise<AccessResponse | null> {
+  const rows = await db.select().from(visitors);
+  const visitor = rows.find((r) => r.qrToken === input.qrToken);
+  if (!visitor) return null;
+
+  const deny = async (reason: string): Promise<AccessResponse> => {
+    await writeLog({
+      doorId: door.id,
+      eventType: "visitor_pass",
+      result: "denied",
+      reason,
+      snapshot: input.snapshot,
+    });
+    return fail(reason, { door: doorInfo, eventType: "visitor_pass" });
+  };
+
+  if (visitor.status === "blacklisted") {
+    return deny("Ziyaretçi blacklist kaydı nedeniyle geçiş yasaklı.");
+  }
+  if (visitor.status === "used") {
+    return deny("Ziyaretçi QR kodu tek geçişliktir ve daha önce kullanılmış.");
+  }
+  if (now < visitor.validFrom) {
+    return deny("Ziyaretçi QR geçerlilik başlangıcı henüz gelmedi.");
+  }
+  if (now > visitor.validTo) {
+    return deny("Ziyaretçi QR süresi dolmuş.");
+  }
+  if (visitor.allowedDoorIds.length > 0 && !visitor.allowedDoorIds.includes(door.id)) {
+    return deny("Bu kapı ziyaretçi için izinli kapılar arasında değil.");
+  }
+
+  await db
+    .update(visitors)
+    .set({ status: "used", checkedOutAt: now })
+    .where(eq(visitors.id, visitor.id));
+  await writeLog({
+    doorId: door.id,
+    eventType: "visitor_pass",
+    result: "granted",
+    reason: `Ziyaretçi ${visitor.fullName} tek geçişlik QR ile geçti`,
+    snapshot: input.snapshot,
+    livenessScore: input.livenessScore ?? null,
+  });
+
+  return {
+    ok: true,
+    result: "granted",
+    eventType: "visitor_pass",
+    reason: "Ziyaretçi QR yetkisi",
+    message: `Hoş geldiniz ${visitor.fullName}. ${door.name} açıldı (tek geçişlik ziyaretçi QR).`,
+    doorUnlocked: true,
+    confidence: 1,
+    matchDistance: null,
+    livenessScore: input.livenessScore ?? null,
+    isSpoof: false,
+    employee: null,
+    door: doorInfo,
+    attendance: null,
+    at: now.toISOString(),
+  };
+}
+
 async function checkDoorPermission(
   employeeId: number,
   door: typeof doors.$inferSelect,
@@ -176,6 +266,12 @@ async function checkDoorPermission(
 ) {
   if (!door.isActive) {
     return { ok: false, reason: "Bu kapı şu anda devre dışı." };
+  }
+
+  // Acil durum protokolü: seçili kapılar süre boyunca serbest (yetki aranmaz).
+  const emergency = await activeEmergency();
+  if (emergency && (emergency.doorIds === "all" || emergency.doorIds.includes(door.id))) {
+    return { ok: true, reason: "Acil durum protokolü aktif" };
   }
 
   if (door.accessPolicy === "all") {
@@ -394,6 +490,13 @@ export async function processAccessEvent(input: AccessRequest): Promise<AccessRe
   }
 
   const identified = await identifyEmployee(input);
+
+  // Personel eşleşmediyse ve QR taşıdıysa: ziyaretçi tek geçişlik QR akışı
+  if (!identified.employee && input.qrToken) {
+    const visitorResponse = await processVisitorPass(input, door, now, doorInfo);
+    if (visitorResponse) return visitorResponse;
+  }
+
   if (!identified.employee) {
     const reason = identified.unknownFace
       ? "Yüz kaydı eşleşmedi. Sicil ile deneyin veya İK’ya yüz kaydı yaptırın."

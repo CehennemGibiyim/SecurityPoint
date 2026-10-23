@@ -368,6 +368,60 @@ if (faceEmpCreated.item?.id) {
   await json(`/api/employees/${faceEmpCreated.item.id}`, { method: "DELETE" });
 }
 
+// ── Kapı geçiş sistemi geliştirmeleri (6 madde) ──────────────────────
+
+// F2 — Vardiyalardan otomatik kapı yetkisi
+const { res: syncRes, data: syncData } = await json("/api/permissions", post({ action: "sync_shifts" }));
+check("F2 vardiya→kapı senkronu çalıştı", syncRes.ok && syncData.ok && syncData.doors > 0, JSON.stringify(syncData));
+const { data: permsAfter } = await json("/api/permissions");
+const vardiyaPerms = (permsAfter.items ?? []).filter((p) => p.source === "vardiya");
+check("F2 senkron vardiya kaynaklı yetki üretti (7 gün)", vardiyaPerms.length > 0 && vardiyaPerms.every((p) => Array.isArray(p.daysOfWeek) && p.daysOfWeek.length === 7), `adet ${vardiyaPerms.length}`);
+const { res: syncAgainRes, data: syncAgain } = await json("/api/permissions", post({ action: "sync_shifts" }));
+check("F2 senkron tekrar çalıştırılabilir (idempotent)", syncAgainRes.ok && syncAgain.created === 0 && syncAgain.updated === 0, JSON.stringify(syncAgain));
+
+// F1 — İçeride kalma süresi + hayalet alanı
+const { data: secF1 } = await json("/api/security");
+check("F1 güvenlik yanıtında hayalet + süre alanları", Array.isArray(secF1.ghosts) && Array.isArray(secF1.inside) && secF1.inside.every((s) => "sinceHours" in s), Object.keys(secF1).join(","));
+
+// F3 — Acil durum kilit açma protokolü (+ imza defteri alarmları)
+const { data: doorsF3 } = await json("/api/doors");
+const f3DoorId = doorsF3.items?.[0]?.id;
+const { res: emRes, data: emData } = await json("/api/security", post({ action: "emergency_unlock", by: "SMOKE", minutes: 5 }));
+check("F3 acil durum protokolü açıldı", emRes.ok && emData.ok && Boolean(emData.until), JSON.stringify(emData));
+const { data: secEm } = await json("/api/security");
+check("F3 güvenlik durumunda acil durum görünüyor", secEm.emergency?.by === "SMOKE", JSON.stringify(secEm.emergency));
+if (f3DoorId) {
+  const { data: emPass } = await json("/api/recognize", post({ doorId: f3DoorId, employeeNo: "1001", action: "door_only" }));
+  check("F3 acil aktifken geçiş reddedilmiyor (protokol)", emPass.ok === true || (emPass.reason ?? "").includes("yetki"), String(emPass.message ?? emPass.reason).slice(0, 120));
+}
+const { res: emEndRes } = await json("/api/security", post({ action: "emergency_end", by: "SMOKE" }));
+const { data: secEnd } = await json("/api/security");
+const alarmTypes = (secEnd.alarms ?? []).map((a) => a.type);
+check("F3 protokol kapatıldı ve alarmları imza defterine düştü", emEndRes.ok && !secEnd.emergency && alarmTypes.includes("emergency_unlock") && alarmTypes.includes("emergency_end"), alarmTypes.slice(0, 8).join(","));
+
+// F5 — Ziyaretçi süreli TEK GEÇİŞLİK QR
+const { res: vRes, data: vCreated } = await json("/api/visitors", post({ fullName: "Smoke Ziyaretçi", validHours: 2 }));
+check("F5 ziyaretçi + QR üretildi", vRes.status === 201 && Boolean(vCreated.item?.qrToken), JSON.stringify(vCreated).slice(0, 120));
+if (vCreated.item?.qrToken && f3DoorId) {
+  const vToken = vCreated.item.qrToken;
+  const { data: pass1 } = await json("/api/recognize", post({ doorId: f3DoorId, qrToken: vToken, action: "door_only" }));
+  check("F5 QR ilk geçişte kapıyı açtı", pass1.ok && pass1.eventType === "visitor_pass", JSON.stringify(pass1).slice(0, 160));
+  const { data: pass2 } = await json("/api/recognize", post({ doorId: f3DoorId, qrToken: vToken, action: "door_only" }));
+  check("F5 ikinci geçiş REDDEDİLDİ (tek kullanımlık)", !pass2.ok && /tek geçişlik/i.test(String(pass2.reason ?? pass2.message ?? "")), String(pass2.reason ?? pass2.message));
+}
+
+// F6 — Reddedilen deneme galerisi verisi
+const { data: secF6 } = await json("/api/security");
+check("F6 reddedilen denemeler listesi dolu", Array.isArray(secF6.rejected) && secF6.rejected.length > 0 && secF6.rejected.every((r) => r.eventType && r.reason), `adet ${secF6.rejected?.length}`);
+
+// F4 — Ağ kesintisi tamponu (offline kuyruk)
+const { res: oqRes, data: oqCreated } = await json("/api/offline-queue", post({ doorId: f3DoorId ?? 1, payload: { smoke: true, employeeNo: "1001" } }));
+check("F4 çevrimdışı kuyruk olayı kaydedildi", oqRes.ok && oqCreated.ok, JSON.stringify(oqCreated).slice(0, 120));
+const { data: oqList } = await json("/api/offline-queue");
+check("F4 kuyruk listelendi (pending ≥ 1)", (oqList.pending ?? 0) >= 1, `pending ${oqList.pending}`);
+const { res: oqSyncRes, data: oqSync } = await json("/api/offline-queue", post({ action: "sync_all" }));
+check("F4 bağlantı gelince senkron (sync_all)", oqSyncRes.ok && oqSync.synced >= 1, JSON.stringify(oqSync));
+
 // Bilinmeyen uç → anlaşılır 404
 const { res: unknownRes, data: unknown } = await json("/api/boyle-bir-uc-yok");
 check("Bilinmeyen uç 404 döndü", unknownRes.status === 404 && Boolean(unknown.error), JSON.stringify(unknown).slice(0, 120));

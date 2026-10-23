@@ -24,6 +24,12 @@ export async function PUT(request: Request) {
     const settings = validateSettings(await request.json());
     // Özel nöbet grupları ayrı uç noktadan yönetilir; eski bir ekranın kaydı onları silmesin.
     settings.customGroups = (await getSettings()).customGroups ?? [];
+    // Acil durum kilit açma protokolü bir ayar değil, çalışma durumudur; ayar kaydında korunur.
+    const existingRow = (await db.select({ data: appSettings.data }).from(appSettings).where(eq(appSettings.id, "global")))[0];
+    const reservedEmergency = (existingRow?.data as unknown as { emergency?: unknown } | undefined)?.emergency;
+    if (reservedEmergency !== undefined) {
+      (settings as unknown as Record<string, unknown>).emergency = reservedEmergency;
+    }
     await db.transaction(async tx => {
       await tx.insert(appSettings).values({ id: "global", data: settings, updatedAt: new Date() }).onConflictDoUpdate({ target: appSettings.id, set: { data: settings, updatedAt: new Date() } });
       await tx.insert(activityLogs).values({ action: "SETTINGS", description: "Kurum bilgileri ve panel tercihleri güncellendi." });

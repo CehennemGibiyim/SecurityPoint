@@ -28,7 +28,7 @@ try {
   check('Masaüstünde yatay taşma yok', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.screenshot({ path: path.join(dir, 'settings-desktop.png'), fullPage: true });
   await page.click('#tab-appearance');
-  check('Ana tema ve 20 alternatif hazır', await page.$$eval('.theme-card', cards => cards.length === 21));
+  check('Ana tema ve 23 alternatif hazır (24 tema)', await page.$$eval('.theme-card', cards => cards.length === 24));
   await clickText('.theme-card', 'Okyanus');
   check('Tema gerçek önizlemeye uygulandı', await page.evaluate(() => document.documentElement.dataset.p26Theme === 'ocean'));
   await clickText('.theme-card', 'Personel26');
@@ -64,6 +64,7 @@ try {
   await page.click('.import-confirm input[type=checkbox]');
   check('Geçerli satırlar açık seçimle aktarılabilir', await page.$eval('.import-actions .primary', button => !button.disabled && button.innerText.includes('1 personeli')));
   await page.screenshot({ path: path.join(dir, 'import-preview.png'), fullPage: true });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.click('#tab-backup');
   await page.waitForSelector('.backup-list');
   const backups = await (await fetch(base + '/api/backup')).json();
@@ -86,22 +87,20 @@ try {
   await page.click('.search-results button');
   await page.waitForSelector('.themes-grid');
   check('Klavye ile panel araması çalışıyor', await page.$eval('#tab-appearance', el => el.getAttribute('aria-selected') === 'true'));
-  const names = ['Puantaj', 'Nöbet Çizelgesi', 'Vardiya Şablonları', 'İzin Yönetimi', 'Değişim Talepleri', 'Personel Yönetimi', 'Adalet Analizi', 'Mevzuat Uyarıları', 'Duyurular', 'Yedekleme', 'Ayarlar'];
+  const names = ['Puantaj Cetveli', 'Nöbet Çizelgesi', 'Vardiya Şablonları', 'Resmi İzin Onayları', 'Nöbet Değişimi', 'Servis & Kadro', 'Adalet Analizi', 'Mevzuat Uyarıları', 'Servis Duyuruları', 'Veri Yedekleme', 'Kurum & Sistem Ayarları'];
   for (const name of names) {
-    await clickText('aside nav button', name);
+    await clickText('aside nav a', name);
     await new Promise(resolve => setTimeout(resolve, 600));
-    check(`Sol menü: ${name}`, await page.$eval('aside nav button[aria-current="page"]', (el, value) => el.innerText.includes(value), name));
-    if (name === 'Personel Yönetimi') { await page.waitForSelector('table tbody tr'); check('TC maskeleme personel listesine uygulandı', await page.$eval('table tbody', el => el.innerText.includes('•••••••'))); }
+    check(`Sol menü: ${name}`, await page.$eval('aside nav a[aria-current="page"]', (el, value) => el.innerText.includes(value), name));
+    if (name === 'Servis & Kadro') { await page.waitForSelector('table tbody tr'); check('TC maskeleme personel listesine uygulandı', await page.$eval('table tbody', el => el.innerText.includes('•••••••'))); }
   }
   await page.setViewport({ width: 390, height: 844 });
-  await page.waitForFunction(() => document.querySelector('.screen-root > aside').getBoundingClientRect().right <= 1);
+  await page.waitForSelector('.mobile-chip-nav');
   check('Mobil yatay taşma yok', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-  check('Mobil menü başlangıçta kapalı', await page.$eval('.screen-root > aside', el => el.getBoundingClientRect().right <= 1));
-  await page.click('button[aria-label="Menüyü aç"]');
-  await page.waitForFunction(() => document.querySelector('.screen-root > aside').getBoundingClientRect().left >= -1);
-  check('Mobil menü açılıyor', await page.$eval('.screen-root > aside', el => el.getBoundingClientRect().left >= -1));
-  await clickText('aside nav button', 'Ayarlar');
-  await page.waitForFunction(() => document.querySelector('.screen-root > aside').getBoundingClientRect().right <= 1);
+  check('Mobil menü çubuğu tüm bağlantıları içerir', await page.$eval('.mobile-chip-nav', nav => nav.querySelectorAll('a').length >= 28));
+  await clickText('.mobile-chip-nav a', 'Kurum & Sistem Ayarları');
+  await page.waitForSelector('.settings-root');
+  check('Mobil menüden ayarlar açılıyor', await page.$eval('.mobile-chip-nav a[aria-current="page"]', el => el.innerText.includes('Kurum & Sistem Ayarları')));
   await page.screenshot({ path: path.join(dir, 'settings-mobile.png'), fullPage: true });
   if (pageErrors.length) console.log('Tarayıcı sayfa hataları:\n - ' + pageErrors.join('\n - '));
   check('Tarayıcı çalışma hatası yok', pageErrors.length === 0);
