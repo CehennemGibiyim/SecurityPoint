@@ -1,0 +1,38 @@
+
+# Bağımlılıklar
+node_modules/
+
+# Next.js derleme çıktıları
+.next/
+out/
+
+# Ortam değişkenleri (gizli bilgiler — asla commit etmeyin)
+.env
+.env.local
+.env*.local
+
+# Windows paket çıktıları (büyük ikili dosyalar)
+Personel26-Portable/
+Personel26-Portable.zip
+.paket-cache/
+windows/Personel26-Kurulum.exe
+
+# Test / geçici
+final-state.png
+*.log
+*.tsbuildinfo
+next-env.d.ts
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
+
+# GitHub Pages derleme çıktıları (scripts/pages-build.mjs üretir)
+.next-pages/
+.pages-build/
+.pg-ddl/
+_site/
+public/pglite/
+public/schema.sql
+.next-static/
+out/

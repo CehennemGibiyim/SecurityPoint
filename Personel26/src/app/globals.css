@@ -1,0 +1,333 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #070b14;
+  --panel: #0e1626;
+  --line: rgba(148, 163, 184, 0.14);
+  /* Yazı tipi aileleri (self-host, bkz. src/app/layout.tsx) */
+  --font-inter: "Inter Variable", "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-grotesk: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+}
+
+html { color-scheme: dark; }
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(56, 189, 248, 0.07), transparent 60%),
+    radial-gradient(900px 500px at -10% 30%, rgba(245, 158, 11, 0.05), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  color: #e2e8f0;
+  font-feature-settings: "tnum" 1, "cv05" 1;
+}
+
+* { scrollbar-width: thin; scrollbar-color: rgba(100, 116, 139, 0.45) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+::selection { background: rgba(56, 189, 248, 0.35); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pulseGlow { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+/* Cam panel */
+.panel {
+  background: linear-gradient(165deg, rgba(23, 32, 52, 0.85), rgba(13, 20, 36, 0.92));
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  backdrop-filter: blur(14px);
+}
+
+/* ═════════════════════════════════════════════ */
+/* PUANTAJ TABLOSU — ekran (dark) bağlamı */
+/* ═════════════════════════════════════════════ */
+.pui table { border-collapse: separate; border-spacing: 0; width: 100%; }
+.pui .p-head {
+  font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.45); font-weight: 700;
+  padding: 6px 4px; text-align: center; white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+.pui .p-row { border-bottom: 1px solid rgba(148, 163, 184, 0.07); transition: background .12s; }
+.pui .p-row:hover { background: rgba(148, 163, 184, 0.045); }
+.pui .p-td { padding: 2px; text-align: center; font-size: 11.5px; }
+.pui .p-name {
+  position: sticky; left: 0; z-index: 6;
+  background: #101a2e;
+  box-shadow: 4px 0 12px -6px rgba(0, 0, 0, 0.8);
+  text-align: left; padding: 3px 8px; min-width: 168px; max-width: 200px;
+  font-size: 12px; font-weight: 600; color: #f1f5f9; white-space: nowrap;
+}
+.pui th.p-name { top: 0; }
+.pui .day-col { min-width: 34px; width: 34px; }
+.pui .day-inp {
+  width: 30px; height: 26px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(148, 163, 184, 0.08); color: #f1f5f9; font-size: 11px; font-weight: 600;
+  text-align: center; outline: none; transition: border-color .12s, background .12s;
+}
+.pui .day-inp:focus { border-color: rgba(56, 189, 248, 0.7); background: rgba(56, 189, 248, 0.12); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18); }
+.pui .day-inp:disabled { opacity: .85; cursor: default; }
+.pui .day-inp.holiday { background: rgba(244, 63, 94, 0.16); border-color: rgba(244, 63, 94, 0.35); color: #fda4af; }
+.pui .day-inp.weekend { background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.3); color: #fcd34d; }
+.pui .day-inp.leave { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; font-weight: 800; }
+.pui .cell-holiday { background: rgba(244, 63, 94, 0.07); }
+.pui .cell-weekend { background: rgba(245, 158, 11, 0.055); }
+.pui .cell-leave { background: rgba(16, 185, 129, 0.07); }
+.pui .sum { font-size: 11px; font-weight: 700; padding: 3px 6px; border-left: 1px solid rgba(148, 163, 184, 0.12); white-space: nowrap; text-align: center; }
+.pui .sum.first { border-left: 2px solid rgba(148, 163, 184, 0.28); }
+.pui .c-req { color: #7dd3fc; }
+.pui .c-wrk { color: #34d399; }
+.pui .c-diff-pos { color: #34d399; }
+.pui .c-diff-neg { color: #fb7185; }
+.pui .c-extra { color: #f9a8d4; }
+.pui .c-night { color: #c4b5fd; }
+.pui .c-hol { color: #fcd34d; }
+.pui .o-inp {
+  width: 40px; height: 22px; background: transparent; border: none; border-bottom: 1px dashed rgba(148, 163, 184, 0.3);
+  text-align: center; font-size: 11px; font-weight: 700; color: inherit; outline: none;
+}
+.pui .o-inp:focus { border-bottom-color: rgba(56, 189, 248, 0.8); }
+.pui .type-chip {
+  font-size: 8.5px; font-weight: 800; padding: 1px 4px; border-radius: 4px; cursor: pointer;
+  border: 1px solid; transition: opacity .12s;
+}
+.pui .type-chip:hover { opacity: .7; }
+.pui .type-isci { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border-color: rgba(245, 158, 11, 0.35); }
+.pui .type-memur { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.35); }
+.pui .type-hemsire { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.35); }
+.pui .day-head { font-size: 11px; font-weight: 800; line-height: 1.15; }
+.pui .day-head small { display: block; font-size: 8.5px; font-weight: 600; opacity: .65; }
+.pui .dh-holiday { color: #fb7185; }
+.pui .dh-weekend { color: #fbbf24; }
+.pui .dh-workday { color: rgba(226, 232, 240, 0.5); }
+
+/* Hafta sekmeleri */
+.week-tab {
+  display: flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.14); background: rgba(148, 163, 184, 0.05);
+  color: rgba(226, 232, 240, 0.65); font-size: 12px; font-weight: 600; transition: all .15s;
+  white-space: nowrap; cursor: pointer;
+}
+.week-tab:hover { border-color: rgba(56, 189, 248, 0.4); color: #fff; }
+.week-tab.is-active {
+  background: rgba(56, 189, 248, 0.14); border-color: rgba(56, 189, 248, 0.55);
+  color: #7dd3fc; box-shadow: 0 0 18px -4px rgba(56, 189, 248, 0.35);
+}
+.week-tab .week-tab-idx {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 6px; background: rgba(255, 255, 255, 0.09); font-size: 10px; font-weight: 800;
+}
+.week-tab small { opacity: .55; font-weight: 500; }
+
+/* ═════════════════════════════════════════════ */
+/* Panele atlandığında kısa vurgu */
+@keyframes panelFlash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); border-color: var(--line); }
+  25%, 75% { box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35); border-color: rgba(56, 189, 248, 0.65); }
+}
+.panel-flash { animation: panelFlash 1.5s ease-in-out; }
+
+/* NÖBET ÇİZELGESİ IZGARASI (referans: duty-system.css) */
+.roster-wrap { max-height: 70vh; overflow: auto; }
+.roster-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 760px; }
+.roster-table thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: #131d33; border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 8px 6px; font-size: 10.5px; line-height: 1.3; min-width: 150px;
+}
+.roster-th.roster-date { min-width: 64px; width: 64px; }
+.roster-th.roster-day { min-width: 84px; width: 84px; }
+.roster-row td { border-bottom: 1px solid rgba(148, 163, 184, 0.07); }
+.roster-row:hover td { background: rgba(125, 211, 252, 0.06); }
+.roster-td { padding: 3px 4px; }
+.roster-date, .roster-day {
+  color: #d9f3ff; font-weight: 800; font-size: 11.5px; white-space: nowrap;
+  position: sticky; left: 0; background: #101a2e; z-index: 4; padding-left: 10px !important;
+}
+.roster-day { left: 64px; box-shadow: 4px 0 12px -6px rgba(0, 0, 0, 0.8); }
+/* Cumartesi / Pazar / tatil satırları */
+.roster-row.is-saturday td { background: rgba(30, 129, 166, 0.16); }
+.roster-row.is-sunday td { background: rgba(166, 104, 18, 0.16); }
+.roster-row.is-holiday td { background: rgba(166, 52, 58, 0.15); }
+.roster-row.is-saturday .roster-date, .roster-row.is-saturday .roster-day { color: #7dd3fc !important; }
+.roster-row.is-sunday .roster-date, .roster-row.is-sunday .roster-day { color: #ffd080 !important; }
+.roster-row.is-holiday .roster-date, .roster-row.is-holiday .roster-day { color: #ffaaaa !important; }
+.roster-select {
+  width: 100%; min-height: 30px; padding: 4px 6px; border-radius: 7px;
+  border: 1px solid rgba(125, 211, 252, 0.2); background: rgba(9, 34, 44, 0.6);
+  color: #fff; font-size: 11.5px; font-weight: 600; outline: none; cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+.roster-select option { background: #0e1729; color: #e2e8f0; }
+.roster-select option:disabled { color: rgba(148, 163, 184, 0.5); }
+.roster-select:hover { border-color: rgba(125, 211, 252, 0.45); }
+.roster-select:focus { border-color: rgba(56, 189, 248, 0.7); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18); }
+.roster-select.is-filled { background: rgba(56, 189, 248, 0.13); border-color: rgba(56, 189, 248, 0.4); }
+.roster-row.is-saturday .roster-select { border-color: rgba(56, 189, 248, 0.4); background: rgba(9, 48, 62, 0.7); }
+.roster-row.is-sunday .roster-select { border-color: rgba(255, 170, 50, 0.4); background: rgba(66, 46, 15, 0.65); }
+.roster-row.is-holiday .roster-select { border-color: rgba(255, 100, 100, 0.45); background: rgba(70, 28, 32, 0.65); }
+.roster-select.has-warning {
+  border-color: rgba(245, 158, 11, 0.8) !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22);
+  background: rgba(120, 72, 10, 0.45) !important;
+}
+
+/* YAZDIRMA — açık tema belgesi */
+/* ═════════════════════════════════════════════ */
+.printdoc { background: #fff; color: #111827; font-size: 10px; padding: 4px; }
+.printdoc .pui table { border-collapse: collapse; }
+.printdoc .pui .p-head { color: #374151; border: 1px solid #9ca3af; padding: 3px 2px; font-size: 8px; background: #f3f4f6; }
+.printdoc .pui .p-row { border: none; }
+.printdoc .pui .p-row:hover { background: #fff; }
+.printdoc .pui .p-td { border: 1px solid #d1d5db; font-size: 8.5px; padding: 1px; }
+.printdoc .pui .p-td.sum { font-size: 8.5px; padding: 1px 3px; }
+.printdoc .pui .p-name {
+  position: static; background: #fff; box-shadow: none; min-width: 0; max-width: none;
+  border: 1px solid #d1d5db; color: #111827; font-size: 8.5px; padding: 1px 4px; white-space: normal; font-weight: 700;
+}
+.printdoc .day-inp { background: #fff !important; border: none !important; box-shadow: none !important; color: #111827 !important; font-size: 8.5px; height: 15px; width: 24px; border-radius: 0; }
+.printdoc .day-inp.leave { color: #047857 !important; font-weight: 800; }
+.printdoc .pui .cell-holiday, .printdoc .pui .cell-weekend, .printdoc .pui .cell-leave { background: #fff; }
+.printdoc .pui .c-req { color: #0369a1; }
+.printdoc .pui .c-wrk, .printdoc .pui .c-diff-pos { color: #047857; }
+.printdoc .pui .c-diff-neg { color: #be123c; }
+.printdoc .pui .c-extra { color: #be185d; }
+.printdoc .pui .c-night { color: #6d28d9; }
+.printdoc .pui .c-hol { color: #b45309; }
+.printdoc .pui .o-inp { border: none; font-size: 8.5px; width: 30px; height: 15px; color: inherit; }
+.printdoc .pui .sum { border-left-color: #d1d5db; }
+.printdoc .pui .sum.first { border-left-color: #6b7280; }
+.printdoc .pui .dh-holiday { color: #be123c; }
+.printdoc .pui .dh-weekend { color: #b45309; }
+.printdoc .pui .dh-workday { color: #374151; }
+.printdoc .pui .type-chip { border: 1px solid #9ca3af; background: #fff; font-size: 7px; cursor: default; }
+.printdoc .pui .type-isci { color: #b45309; }
+.printdoc .pui .type-memur { color: #0369a1; }
+.printdoc .pui .type-hemsire { color: #047857; }
+.printdoc .sig-line { border-top: 1px solid #6b7280; padding-top: 4px; margin-top: 34px; text-align: center; }
+.sig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; padding: 8px 28px; }
+.sig-grid .who { font-weight: 700; font-size: 9px; text-align: center; }
+.sig-grid .title { font-size: 8.5px; color: #4b5563; text-align: center; }
+.print-title { text-align: center; margin: 2px 0 8px; }
+.print-title h1 { font-size: 14px; font-weight: 800; letter-spacing: .02em; }
+.print-title p { font-size: 10px; color: #4b5563; }
+
+/* Yazdırma önizleme katmanı — gri masa üzerinde tek A4 kâğıt (içerik sayfaya sığdırılır) */
+#print-area { display: none; }
+body.print-preview-open { overflow: hidden; }
+body.print-preview-open #print-area {
+  display: block; position: fixed; inset: 0; z-index: 70;
+  background: #525659; overflow: auto; padding: 28px 16px 120px;
+}
+/* Ölçüm modu: önizleme kapalıyken yazdırılırsa içerik ekran dışında ölçülür */
+body.print-measuring #print-area {
+  display: block !important; position: fixed !important; left: -100000px !important; top: 0 !important;
+  visibility: hidden !important;
+}
+.print-sheet {
+  background: #fff; color: #111827; margin: 0 auto; box-sizing: border-box;
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.5);
+}
+.print-fit-outer { margin: 0 auto; overflow: hidden; }
+.print-fit-inner { box-sizing: border-box; }
+.print-fit-info { color: #cbd5e1; font-size: 12px; font-weight: 700; padding: 0 8px; white-space: nowrap; }
+.print-fit-info.is-dense { color: #fcd34d; }
+.print-toolbar { display: none; }
+body.print-preview-open .print-toolbar {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  z-index: 80; display: flex; gap: 10px; align-items: center;
+  background: #0c1220; border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 10px 12px; border-radius: 14px; box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.65);
+}
+.print-toolbar-btn {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
+  border: none; border-radius: 10px; font-size: 12px; font-weight: 700;
+  color: #e2e8f0; background: rgba(148, 163, 184, 0.14); cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.print-toolbar-btn:hover { background: rgba(148, 163, 184, 0.24); }
+.print-toolbar-btn.primary { background: #38bdf8; color: #082f49; }
+.print-toolbar-btn.primary:hover { background: #7dd3fc; }
+
+/* ── Hafta-blok yazdırma düzeni (görsellerdeki PUANTAJ FORMU biçimi) ── */
+.printdoc .code-legend {
+  border: 1px solid #9ca3af; background: #f9fafb; color: #374151;
+  font-size: 7.6px; line-height: 1.55; padding: 4px 7px; margin: 4px 0 8px;
+}
+.printdoc .pw-h { font-size: 10.5px; font-weight: 800; margin: 9px 0 3px; color: #111827; }
+.printdoc table.pw { border-collapse: collapse; width: 100%; }
+.printdoc .pw th, .printdoc .pw td {
+  border: 1px solid #9ca3af; font-size: 8.6px; padding: 2.5px 3px; text-align: center; color: #111827;
+}
+.printdoc .pw th { background: #f3f4f6; font-weight: 700; }
+.printdoc .pw th small { display: block; font-size: 6.8px; font-weight: 600; color: #6b7280; }
+.printdoc .pw .name { text-align: left; font-weight: 700; width: 118px; white-space: nowrap; }
+.printdoc .pw td.sat, .printdoc .pw th.sat { background: #e6f3fb; }
+.printdoc .pw td.sun, .printdoc .pw th.sun { background: #fdf1df; }
+.printdoc .pw td.hol, .printdoc .pw th.hol { background: #fde8e8; }
+.printdoc .pw th.s-req { background: #e0f2fe; }
+.printdoc .pw th.s-wrk { background: #dcfce7; }
+.printdoc .pw th.s-night { background: #ede9fe; }
+.printdoc .pw th.s-extra { background: #fce7f3; }
+.printdoc .pw th.s-hol { background: #fef3c7; }
+.printdoc .note-block {
+  border: 1px solid #9ca3af; background: #fffbeb; color: #374151;
+  font-size: 9px; padding: 6px 9px; margin-top: 10px; white-space: pre-wrap;
+}
+.printdoc .info-grid { display: flex; justify-content: space-between; gap: 14px; margin: 4px 0 10px; }
+.printdoc .info-box { border: 1px solid #9ca3af; padding: 6px 9px; font-size: 9px; color: #111827; line-height: 1.6; }
+.printdoc .info-box b { font-size: 8px; letter-spacing: .03em; }
+.printdoc .onay-h { font-size: 9px; font-weight: 800; margin-top: 14px; border-top: 2px solid #374151; padding-top: 6px; }
+
+@media print {
+  /* Kâğıt yönü (@page) PrintArea tarafından içeriğe göre dinamik ayarlanır */
+  html, body { background: #fff !important; color: #111 !important; margin: 0 !important; padding: 0 !important; }
+  body.print-preview-open { overflow: visible !important; }
+  .screen-root, .print-toolbar { display: none !important; }
+  #print-area {
+    display: block !important; position: static !important; inset: auto !important;
+    overflow: visible !important; padding: 0 !important; height: auto !important;
+    background: #fff !important; color: #111827 !important;
+  }
+  /* Kâğıt görünümü süsleri kaldırılır; sayfa kenar boşluğunu @page verir */
+  #print-area .print-sheet {
+    width: auto !important; min-height: 0 !important; padding: 0 !important;
+    margin: 0 !important; box-shadow: none !important;
+  }
+  /* Sığdırılmış içerik bölünmeden tek parça basılır */
+  #print-area .print-fit-outer { break-inside: avoid; page-break-inside: avoid; }
+  /* Renkli hücre arka planları basılsın */
+  #print-area, #print-area * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* İnce animasyon yardımcıları */
+.anim-slide { animation: slideUp .35s cubic-bezier(.22,+1,.36,1) both; }
+.anim-slide-1 { animation-delay: .04s; }
+.anim-slide-2 { animation-delay: .09s; }
+.anim-slide-3 { animation-delay: .14s; }
+
+/* Yatay kaydırılabilir çubuklarda kaydırma çubuğunu gizle */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* MAAS BORDRO */
+.print-payroll-table { width: 100%; border-collapse: collapse; margin: 0 0 8px; }
+.print-payroll-table th, .print-payroll-table td { border: 1px solid #9ca3af; padding: 4px 6px; font-size: 8.5px; }
+.print-payroll-table th { font-weight: 800; background: #f3f4f6; text-align: left; }
+.print-payroll-table td { text-align: right; color: #111827; }
+.payroll-print { display: none; }
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  body { background: #fff !important; color: #111827 !important; }
+  body * { visibility: hidden !important; }
+  .payroll-print, .payroll-print * { visibility: visible !important; }
+  .payroll-print { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff; color: #111827; }
+  .no-print { display: none !important; }
+  .payroll-print h2 { text-align: center; font-size: 11px; margin: 8px 0 3px; }
+  .payroll-print .print-title h1 { font-size: 16px; margin: 0 0 4px; }
+  .payroll-print .print-title p { margin: 0 0 8px; font-size: 9px; }
+  .print-net { text-align: right; font-size: 12px; margin-top: 8px; }
+}

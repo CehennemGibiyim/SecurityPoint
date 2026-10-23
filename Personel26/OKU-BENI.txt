@@ -1,0 +1,8 @@
+Bu zip, ilk yuklediginiz Personel26.zip'ten bu yana degisen/eklenen TUM dosyalari icerir.
+Hepsini ayni yollarla GitHub'a yukleyin (klasor yapisini koruyarak surukleyin).
+
+GITHUB'DAN SILINECEK:
+  drizzle.config.json   (yerine drizzle.config.ts kullaniliyor)
+
+YUKLEME SONRASI:
+  Actions sayfasinda en ustteki YENI calismayi bekleyin; eski kirmizi calismalar kirmizi kalir.

@@ -1,0 +1,112 @@
+import puppeteer from 'puppeteer';
+import assert from 'node:assert/strict';
+import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+const base = process.env.TEST_BASE_URL ?? 'http://127.0.0.1:3000';
+const dir = path.resolve('.artifacts/browser');
+const downloads = path.join(dir, 'downloads');
+await mkdir(downloads, { recursive: true });
+const original = await (await fetch(base + '/api/settings')).json();
+const boot = await (await fetch(base + '/api/bootstrap')).json();
+const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] });
+const page = await browser.newPage();
+const pageErrors = [];
+let passed = 0;
+function check(name, condition) { assert.ok(condition, name); passed++; console.log('PASS', name); }
+async function clickText(selector, text) {
+  const clicked = await page.evaluate((selector, text) => { const button = [...document.querySelectorAll(selector)].find(el => el.innerText.includes(text)); if (!button) return false; button.click(); return true; }, selector, text);
+  assert.ok(clicked, `Düğme bulunmalı: ${text}`);
+}
+page.on('pageerror', error => pageErrors.push(error.message));
+page.on('dialog', dialog => dialog.dismiss());
+try {
+  await page.setViewport({ width: 1440, height: 1000 });
+  await page.goto(base, { waitUntil: 'networkidle0' });
+  check('ORION FaceGate Canlı Panel ve birleşik sol menü açıldı', await page.$$eval('aside nav a', links => links.length >= 28));
+  await page.goto(base + '/puantaj26/ayarlar', { waitUntil: 'networkidle0' });
+  check('Ayarlar ekranı ve sol menü açıldı', await page.$('.settings-root') !== null && await page.$$eval('aside nav a', links => links.length >= 28));
+  check('Masaüstünde yatay taşma yok', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: path.join(dir, 'settings-desktop.png'), fullPage: true });
+  await page.click('#tab-appearance');
+  check('Ana tema ve 20 alternatif hazır', await page.$$eval('.theme-card', cards => cards.length === 21));
+  await clickText('.theme-card', 'Okyanus');
+  check('Tema gerçek önizlemeye uygulandı', await page.evaluate(() => document.documentElement.dataset.p26Theme === 'ocean'));
+  await clickText('.theme-card', 'Personel26');
+  check('Ana temaya dönüş', await page.evaluate(() => document.documentElement.dataset.p26Theme === 'original'));
+  await clickText('.theme-filter button', 'Açık');
+  check('Açık temalar filtrelenir', await page.$$eval('.theme-card', cards => cards.length === 6));
+  await clickText('.theme-filter button', 'Tüm temalar');
+  await page.screenshot({ path: path.join(dir, 'themes.png'), fullPage: true });
+  await page.click('#tab-general');
+  await page.locator('.institution-card .settings-form-grid label:first-child input').fill('TARAYICI TEST KURUMU');
+  await page.click('.save-settings');
+  await page.waitForFunction(() => document.querySelector('.settings-toast')?.innerText.includes('başarıyla'));
+  check('Arayüzden ayar kalıcı kaydedildi', (await (await fetch(base + '/api/settings')).json()).settings.institution === 'TARAYICI TEST KURUMU');
+  await page.click('#tab-import');
+  await page.screenshot({ path: path.join(dir, 'import-upload.png'), fullPage: true });
+  const quote = value => `"${String(value).replaceAll('"', '""')}"`;
+  const csv = [['Ad Soyad', 'TC Kimlik No', 'Personel sınıfı', 'Personel grubu', 'Servisler'], ['ARAYÜZ TEST PERSONEL', '33333333330', 'Hemşire', 'Hemşire/Sağlık', boot.departments[0].name], ['HATALI TEST SATIRI', '123', 'Bilinmeyen', 'Sağlık', 'Olmayan servis']].map(row => row.map(quote).join(';')).join('\n');
+  const file = path.join(dir, 'personel-test.csv'); await writeFile(file, '\ufeff' + csv, 'utf8');
+  const upload = await page.$('.import-wizard input[type=file]'); await upload.uploadFile(file);
+  await page.waitForSelector('.mapping-table');
+  check('CSV dosyası okundu ve sütunlar eşleştirildi', await page.$eval('select[aria-label="Ad Soyad sütunu"]', select => select.value === '0'));
+  check('Servis sütunu otomatik eşleştirildi', await page.$eval('select[aria-label="Servis / Departman sütunu"]', select => select.value === '4'));
+  await clickText('.import-actions button', 'Kontrol et ve önizle');
+  await page.waitForSelector('.import-summary');
+  check('Hatalar kayıt öncesi gösteriliyor', await page.$eval('.import-summary .red strong', el => el.innerText === '1'));
+  check('Hatalı aktarım düğmesi kilitli', await page.$eval('.import-actions .primary', button => button.disabled));
+  const client = await page.createCDPSession();
+  await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+  await clickText('.import-preview-toolbar button', 'raporu indir');
+  let report;
+  for (let i = 0; i < 30; i++) { report = (await readdir(downloads)).find(name => name.endsWith('.csv')); if (report) break; await new Promise(resolve => setTimeout(resolve, 150)); }
+  check('Açıklamalı CSV raporu indirildi', Boolean(report) && (await readFile(path.join(downloads, report), 'utf8')).includes('TC kimlik'));
+  await page.click('.import-confirm input[type=checkbox]');
+  check('Geçerli satırlar açık seçimle aktarılabilir', await page.$eval('.import-actions .primary', button => !button.disabled && button.innerText.includes('1 personeli')));
+  await page.screenshot({ path: path.join(dir, 'import-preview.png'), fullPage: true });
+  await page.click('#tab-backup');
+  await page.waitForSelector('.backup-list');
+  const backups = await (await fetch(base + '/api/backup')).json();
+  const snapshot = await (await fetch(base + `/api/backup/${backups.backups[0].id}`)).json();
+  const backupFile = path.join(dir, 'test-backup.json'); await writeFile(backupFile, JSON.stringify(snapshot));
+  const backupUpload = await page.$('.database-actions input[type=file]'); await backupUpload.uploadFile(backupFile);
+  await page.waitForSelector('.restore-preview');
+  check('Yedek dosyası yüklenip önizlendi', await page.$eval('.restore-preview', el => el.innerText.includes('personel')));
+  check('Geri yükleme açık yazılı onay ister', await page.$eval('.settings-modal-actions .primary', button => button.disabled));
+  await page.click('.settings-modal-close');
+  await clickText('.schema-actions button', 'Şemayı güncelle');
+  await page.waitForSelector('.settings-modal');
+  check('Şema güncellemesi onay pencereli', await page.$eval('.settings-modal h3', el => el.innerText.includes('onaylayın')));
+  await page.click('.settings-modal-close');
+  await page.click('#tab-system');
+  check('Windows testi dürüst biçimde bekliyor gösterilir', await page.$eval('.windows-card', el => el.innerText.includes('çalıştırılmadı')));
+  await page.keyboard.down('Control'); await page.keyboard.press('k'); await page.keyboard.up('Control');
+  await page.waitForSelector('.search-modal');
+  await page.locator('.search-modal-input input').fill('Görünüm');
+  await page.click('.search-results button');
+  await page.waitForSelector('.themes-grid');
+  check('Klavye ile panel araması çalışıyor', await page.$eval('#tab-appearance', el => el.getAttribute('aria-selected') === 'true'));
+  const names = ['Puantaj', 'Nöbet Çizelgesi', 'Vardiya Şablonları', 'İzin Yönetimi', 'Değişim Talepleri', 'Personel Yönetimi', 'Adalet Analizi', 'Mevzuat Uyarıları', 'Duyurular', 'Yedekleme', 'Ayarlar'];
+  for (const name of names) {
+    await clickText('aside nav button', name);
+    await new Promise(resolve => setTimeout(resolve, 600));
+    check(`Sol menü: ${name}`, await page.$eval('aside nav button[aria-current="page"]', (el, value) => el.innerText.includes(value), name));
+    if (name === 'Personel Yönetimi') { await page.waitForSelector('table tbody tr'); check('TC maskeleme personel listesine uygulandı', await page.$eval('table tbody', el => el.innerText.includes('•••••••'))); }
+  }
+  await page.setViewport({ width: 390, height: 844 });
+  await page.waitForFunction(() => document.querySelector('.screen-root > aside').getBoundingClientRect().right <= 1);
+  check('Mobil yatay taşma yok', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  check('Mobil menü başlangıçta kapalı', await page.$eval('.screen-root > aside', el => el.getBoundingClientRect().right <= 1));
+  await page.click('button[aria-label="Menüyü aç"]');
+  await page.waitForFunction(() => document.querySelector('.screen-root > aside').getBoundingClientRect().left >= -1);
+  check('Mobil menü açılıyor', await page.$eval('.screen-root > aside', el => el.getBoundingClientRect().left >= -1));
+  await clickText('aside nav button', 'Ayarlar');
+  await page.waitForFunction(() => document.querySelector('.screen-root > aside').getBoundingClientRect().right <= 1);
+  await page.screenshot({ path: path.join(dir, 'settings-mobile.png'), fullPage: true });
+  if (pageErrors.length) console.log('Tarayıcı sayfa hataları:\n - ' + pageErrors.join('\n - '));
+  check('Tarayıcı çalışma hatası yok', pageErrors.length === 0);
+} finally {
+  await fetch(base + '/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(original.settings) });
+  await browser.close();
+}
+console.log(`\n${passed} arayüz testi geçti.`);

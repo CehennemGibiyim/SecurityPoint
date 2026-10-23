@@ -1,0 +1,79 @@
+# ============================================================
+#  GitHub Pages — ORION FaceGate × Puantaj26 PANELİ (SecurityPoint)
+#  main dalına her push'ta paneli derler ve yayınlar:
+#    https://cehennemgibiyim.github.io/SecurityPoint/
+#
+#  ⚠ TEK SEFERLİK AYAR (zorunlu):
+#    Repo → Settings → Pages → Build and deployment
+#        Source: "GitHub Actions"  (branch seçeneği DEĞİL)
+#    Bu ayar yapılmazsa GitHub, deponun README'sini yayınlar ve panel görünmez.
+#
+#  NOT: GitHub yalnızca DEPO KÖKÜNDEKİ .github/workflows içindeki
+#  workflow'ları çalıştırır; uygulama Entegrasyon/ altındadır,
+#  bu yüzden tüm run adımları working-directory ile oraya yönlenir.
+# ============================================================
+name: GitHub Pages (SecurityPoint paneli)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Entegrasyon/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: Entegrasyon
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bağımlılıkları kur
+        run: npm install --no-audit --no-fund
+        env:
+          # Tarayıcı testleri için Chrome indirmeye gerek yok
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+
+      - name: Pages modunu denetle (uyarı)
+        run: |
+          echo "### GitHub Pages ayarı" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Yayın adresi: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Önemli:** Settings → Pages → Source = *GitHub Actions* olmalı, aksi halde GitHub README'yi yayınlar." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Paneli derle (statik + tarayıcı içi veritabanı)
+        run: node scripts/pages-build.mjs
+
+      - name: Tarayıcı içi veritabanını doğrula (duman testi)
+        run: node scripts/pages-smoke-test.mjs
+
+      # uses adımları working-directory'den etkilenmez → yol açıkça yazılır
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: Entegrasyon/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,83 @@
+name: Windows paketleme ve kurulum testleri
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Entegrasyon/**"
+      - ".github/workflows/windows-test.yml"
+  pull_request:
+    paths:
+      - "Entegrasyon/**"
+      - ".github/workflows/windows-test.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: Entegrasyon
+
+jobs:
+  package:
+    runs-on: windows-2025
+    timeout-minutes: 35
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Next.js tiplerini üret
+        run: npx next typegen
+      - name: TypeScript kontrolü
+        run: npx tsc --noEmit --pretty false
+      - name: Üretim derlemesi
+        run: npm run build
+      - name: Taşınabilir paket üret
+        shell: pwsh
+        run: ./windows/paket-olustur.ps1 -SkipBuild
+      - name: Kurulum dosyasını derle
+        shell: pwsh
+        run: |
+          $compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $compiler)) { choco install innosetup --yes --no-progress }
+          & $compiler windows/installer.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup derlemesi başarısız.' }
+      # uses adımları working-directory'den etkilenmez → yollar açıkça yazılır
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-distribution
+          path: |
+            Entegrasyon/Personel26-Portable.zip
+            Entegrasyon/windows/Personel26-Kurulum.exe
+          retention-days: 7
+  clean-runtime:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      # İndirilen dağıtım depo köküne iner (uses adımı working-directory kullanmaz)
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-distribution
+          path: distribution
+      - name: Paketlenmiş araçlarla kurulum, durdurma, güncelleme ve geri yükleme
+        shell: powershell
+        run: ./windows/test-clean-windows.ps1 -DistributionPath ../distribution
+      - name: Test raporu ve günlükler
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-${{ matrix.os }}
+          path: Entegrasyon/.artifacts/windows-tests
+          retention-days: 7

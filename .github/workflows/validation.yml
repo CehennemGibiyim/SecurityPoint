@@ -1,0 +1,67 @@
+name: Fullstack dogrulama ve arayuz testleri
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Entegrasyon/**"
+      - ".github/workflows/validation.yml"
+  pull_request:
+    paths:
+      - "Entegrasyon/**"
+      - ".github/workflows/validation.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: Entegrasyon
+
+jobs:
+  fullstack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: personel26_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/personel26_test
+      PUPPETEER_SKIP_DOWNLOAD: '1'
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+      HOSTNAME: 127.0.0.1
+      PORT: '3000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npx next typegen
+      - run: npx tsc --noEmit --pretty false
+      - run: npm run build
+      - run: npx drizzle-kit push --config=drizzle.config.ts
+      - name: API, transaction, aktarim ve arayuz testleri
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+          node .next/standalone/server.js > /tmp/personel26-server.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" || true' EXIT
+          for i in $(seq 1 60); do curl -fsS http://127.0.0.1:3000/api/health && break || sleep 1; done
+          curl -fsS -X POST http://127.0.0.1:3000/api/database -H 'Content-Type: application/json' -d '{"action":"update","confirm":"GÜNCELLE"}'
+          node scripts/test-settings-api.mjs
+          node scripts/test-settings-browser.mjs
+      - name: GitHub Pages veritabani koprusu
+        run: node scripts/pages-smoke-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: personnel26-browser-tests
+          path: Entegrasyon/.artifacts/browser
+          retention-days: 7
