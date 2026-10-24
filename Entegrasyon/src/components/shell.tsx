@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   Activity,
   Banknote,
@@ -42,6 +42,8 @@ type NavEntry = {
   exact?: boolean;
   /** Menüye ait kendine özel gradyan renk (Personel26 panelindeki renkli ikonlar gibi). */
   grad: string;
+  /** Personel26 içindeki alt grup (eski paneldeki ÇALIŞMA ALANI / YÖNETİM / AYARLAR). */
+  group?: string;
 };
 
 /** Renkli, yuvarlatılmış simge kutusu (Personel26 panelindeki gibi gradyanlı zemin üzerinde beyaz simge). */
@@ -78,21 +80,36 @@ const FACE_NAV: NavEntry[] = [
   { href: "/ayarlar", label: "Sistem & KVKK", icon: Settings, grad: "from-slate-500 to-slate-700" },
 ];
 
+// Eski Personel26 paneliyle birebir aynı sıra ve gruplar:
+// ÇALIŞMA ALANI (Nöbet → Puantaj → Bordro → Şablon → Personel → İzin → Değişim)
+// → YÖNETİM (Adalet, Uyarılar, Duyurular, Yedekleme) → AYARLAR.
 const PUANTAJ26_NAV: NavEntry[] = [
-  { href: "/puantaj26", label: "Puantaj Cetveli", icon: ClipboardList, exact: true, grad: "from-sky-500 to-blue-600" },
-  { href: "/puantaj26/nobet", label: "Nöbet Çizelgesi", icon: CalendarClock, grad: "from-violet-500 to-purple-600" },
-  { href: "/puantaj26/bordro", label: "Maaş Bordro (Resmi)", icon: Banknote, grad: "from-emerald-500 to-cyan-600" },
-  { href: "/puantaj26/sablon", label: "Vardiya Şablonları", icon: LayoutTemplate, grad: "from-fuchsia-500 to-pink-600" },
-  { href: "/puantaj26/personel", label: "Servis & Kadro Yönetimi", icon: Users, grad: "from-cyan-500 to-sky-600" },
-  { href: "/puantaj26/izin", label: "Resmi İzin Onayları", icon: CalendarDays, grad: "from-emerald-500 to-teal-600" },
-  { href: "/puantaj26/degisim", label: "Nöbet Değişimi (Takas)", icon: Repeat, grad: "from-orange-500 to-amber-600" },
-  { href: "/puantaj26/analiz", label: "Adalet Analizi", icon: Scale, grad: "from-yellow-500 to-orange-500" },
-  { href: "/puantaj26/uyarilar", label: "Mevzuat Uyarıları", icon: ShieldAlert, grad: "from-rose-500 to-red-600" },
-  { href: "/puantaj26/duyuru", label: "Servis Duyuruları", icon: Megaphone, grad: "from-pink-500 to-rose-600" },
-  { href: "/puantaj26/yedek", label: "Veri Yedekleme", icon: DatabaseBackup, grad: "from-indigo-500 to-blue-700" },
-  { href: "/puantaj26/ayarlar", label: "Kurum & Sistem Ayarları", icon: Settings2, grad: "from-slate-500 to-slate-700" },
-  { href: "/personel-sorgu", label: "TC Personel Sorgu", icon: Fingerprint, grad: "from-emerald-500 to-green-600" },
+  { href: "/puantaj26/nobet", label: "Nöbet Çizelgesi", icon: CalendarClock, group: "Çalışma Alanı", grad: "from-violet-500 to-purple-600" },
+  { href: "/puantaj26", label: "Puantaj Cetveli", icon: ClipboardList, exact: true, group: "Çalışma Alanı", grad: "from-sky-500 to-blue-600" },
+  { href: "/puantaj26/bordro", label: "Maaş Bordro (Resmi)", icon: Banknote, group: "Çalışma Alanı", grad: "from-emerald-500 to-cyan-600" },
+  { href: "/puantaj26/sablon", label: "Vardiya Şablonları", icon: LayoutTemplate, group: "Çalışma Alanı", grad: "from-fuchsia-500 to-pink-600" },
+  { href: "/puantaj26/personel", label: "Servis & Kadro Yönetimi", icon: Users, group: "Çalışma Alanı", grad: "from-cyan-500 to-sky-600" },
+  { href: "/personel-sorgu", label: "TC Personel Sorgu", icon: Fingerprint, group: "Çalışma Alanı", grad: "from-emerald-500 to-green-600" },
+  { href: "/puantaj26/izin", label: "Resmi İzin Onayları", icon: CalendarDays, group: "Çalışma Alanı", grad: "from-emerald-500 to-teal-600" },
+  { href: "/puantaj26/degisim", label: "Nöbet Değişimi (Takas)", icon: Repeat, group: "Çalışma Alanı", grad: "from-orange-500 to-amber-600" },
+  { href: "/puantaj26/analiz", label: "Adalet Analizi", icon: Scale, group: "Yönetim", grad: "from-yellow-500 to-orange-500" },
+  { href: "/puantaj26/uyarilar", label: "Mevzuat Uyarıları", icon: ShieldAlert, group: "Yönetim", grad: "from-rose-500 to-red-600" },
+  { href: "/puantaj26/duyuru", label: "Servis Duyuruları", icon: Megaphone, group: "Yönetim", grad: "from-pink-500 to-rose-600" },
+  { href: "/puantaj26/yedek", label: "Veri Yedekleme", icon: DatabaseBackup, group: "Yönetim", grad: "from-indigo-500 to-blue-700" },
+  { href: "/puantaj26/ayarlar", label: "Kurum & Sistem Ayarları", icon: Settings2, group: "Ayarlar", grad: "from-slate-500 to-slate-700" },
 ];
+
+/** Personel26 alt grup başlığı — eski paneldeki gibi madde listesini böler. */
+function P26SubGroupHeader({ label }: { label: string }) {
+  return (
+    <li
+      aria-hidden="true"
+      className="px-2.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/55 first:pt-1"
+    >
+      {label}
+    </li>
+  );
+}
 
 const ALL_NAV = [...FACE_NAV, ...PUANTAJ26_NAV];
 
@@ -314,26 +331,30 @@ export function Shell({ children }: { children: React.ReactNode }) {
               collapsed={collapsed.p26}
               onToggle={() => toggleCollapsed("p26")}
             />
-            {collapsed.p26 ? null : PUANTAJ26_NAV.map((item) => {
+            {collapsed.p26 ? null : PUANTAJ26_NAV.map((item, idx) => {
+              const prev = PUANTAJ26_NAV[idx - 1];
+              const showGroup = Boolean(item.group && item.group !== prev?.group);
               const active = isRouteActive(pathname, item);
               const Icon = item.icon;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "group flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition",
-                    active
-                      ? "bg-amber-200/14 font-medium text-amber-200 ring-1 ring-amber-200/30"
-                      : "text-slate-400 hover:bg-white/5 hover:text-white",
-                  )}
-                >
-                  <NavIcon grad={item.grad} active={active}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </NavIcon>
-                  <span className="truncate">{item.label}</span>
-                </Link>
+                <Fragment key={item.href}>
+                  {showGroup ? <P26SubGroupHeader label={item.group!} /> : null}
+                  <Link
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition",
+                      active
+                        ? "bg-amber-200/14 font-medium text-amber-200 ring-1 ring-amber-200/30"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white",
+                    )}
+                  >
+                    <NavIcon grad={item.grad} active={active}>
+                      <Icon className="h-3.5 w-3.5" />
+                    </NavIcon>
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                </Fragment>
               );
             })}
           </nav>
