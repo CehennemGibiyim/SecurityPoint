@@ -24,6 +24,7 @@ function Set-AutoStart([bool]$Enable) {
     $content = 'Set sh = CreateObject("WScript.Shell")' + "`r`n" + 'sh.Run "' + ($cmd -replace '"','""') + '", 0, False' + "`r`n"
     # UTF-8 BOM ile yazilir ki WSH Turkce karakterli yollari dogru okusun.
     [IO.File]::WriteAllText($StartupFile, $content, [Text.UTF8Encoding]::new($true))
+    if (-not (Test-Path $StartupFile)) { throw 'Otomatik baslatma kaydi yazilamadi.' }
     Write-Host "Otomatik baslatma acildi (Windows acilis klasoru): $StartupFile"
   } else {
     Remove-Item $StartupFile -Force -ErrorAction SilentlyContinue
@@ -32,15 +33,17 @@ function Set-AutoStart([bool]$Enable) {
 }
 function Set-AutoBackup([bool]$Enable) {
   if ($Enable) {
+    # schtasks /TR icindeki ic ice tirnaklar Windows PowerShell 5.1'de
+    # bozuldugu icin ScheduledTasks modulu (nesne tabanli, tirmnak oyunu yok) kullanilir.
     $psPath = Join-Path $Root 'Personel26-Yonet.ps1'
-    $tr = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $psPath + '" -Action Backup'
-    & schtasks.exe /Create /TN $TaskName /SC DAILY /ST 19:00 /TR ('"' + $tr + '"') /F | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw 'Gunluk yedek gorevi olusturulamadi.' }
+    $arg = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $psPath + '" -Action Backup'
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arg
+    $trigger = New-ScheduledTaskTrigger -Daily -At (Get-Date -Hour 19 -Minute 0 -Second 0)
+    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Force | Out-Null
+    if (-not (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)) { throw 'Gunluk yedek gorevi olusturulamadi.' }
     Write-Host "Gunluk otomatik yedek acildi (her gun 19:00): $TaskName"
   } else {
-    $prev = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    try { & schtasks.exe /Delete /TN $TaskName /F *> $null } finally { $ErrorActionPreference = $prev }
+    Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
     Write-Host 'Gunluk otomatik yedek gorevi silindi.'
   }
 }

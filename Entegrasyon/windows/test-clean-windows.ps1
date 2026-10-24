@@ -11,7 +11,11 @@ $PreviousPath = $env:PATH
 $UnrelatedProcess = $null
 function Assert-Check([string]$Name,[bool]$Condition) {
   $Checks.Add(@{ name=$Name; passed=$Condition; time=(Get-Date).ToUniversalTime().ToString('o') })
-  if (-not $Condition) { throw "TEST BASARISIZ: $Name" }
+  if (-not $Condition) {
+    # GitHub annotasyonu: başarısız adı oturumsuz herkes görebilir (log indirmeden).
+    Write-Host "::error title=Windows temiz kurulum testi::TEST BASARISIZ: $Name"
+    throw "TEST BASARISIZ: $Name"
+  }
   Write-Host "PASS: $Name" -ForegroundColor Green
 }
 function Manager([string]$Mode,[string[]]$More=@()) {
