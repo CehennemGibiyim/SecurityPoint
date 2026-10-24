@@ -10,7 +10,9 @@ Ayrıntılı adımlar, SSS ve klasör yapısı:
 | Paket | Dosya | Kullanım |
 | --- | --- | --- |
 | Taşınabilir (önerilen) | `windows/paket-olustur.ps1` → `Personel26-Portable\` | Klasörü kopyala, `Personel26-Baslat.bat` çift tıkla. Kurulum gerekmez. |
-| Kurulum (.exe) | `windows/installer.iss` (Inno Setup) → `Personel26-Kurulum.exe` | Klasik İleri–İleri–Bitir kurulumu, masaüstü kısayolu |
+| Kurulum (.exe) | `windows/paket-olustur.ps1` → `Personel26-Kurulum.exe` | Tek betik hem portable paketi hem .exe'yi üretir. Klasik İleri–İleri–Bitir kurulumu, masaüstü kısayolu. |
+
+> Tek komut her şeyi yapar: derleme, portable paket, ZIP, `installer.iss` üretimi ve Inno Setup ile .exe derleme. Inno Setup kurulu değilse betik önce sessizce kurmayı dener; Visual C++ Redistributable pakete gömülüdür, temiz Windows'ta kurulum sırasında veya ilk açılışta kendiliğinden kurulur.
 
 ## Taşınabilir paketi üretmek (geliştirici PC)
 
@@ -24,6 +26,7 @@ powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1
 
 - `Personel26-Portable\` — USB’ye kopyalanabilir klasör
 - `Personel26-Portable.zip` — arşiv
+- `windows\Personel26-Kurulum.exe` — kurulum dosyası (Inno Setup yoksa betik kendisi kurmayı dener)
 
 Hedef PC’de **`Personel26-Baslat.bat`** çalıştırın. İlk açılışta veritabanı otomatik kurulur; tarayıcı `http://127.0.0.1:3210` adresini açar. Durdurmak için `Personel26-Durdur.bat`.
 

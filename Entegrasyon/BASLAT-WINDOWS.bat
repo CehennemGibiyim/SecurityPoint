@@ -21,6 +21,7 @@ if %errorlevel% neq 0 (
     echo Node.js olmadan calisan gomulu PostgreSQL + Node kurulum paketi icin
     echo GitHub Actions "windows-distribution" ciktisindaki Personel26-Kurulum.exe
     echo dosyasini calistirin veya https://nodejs.org adresinden Node.js 22 kurun.
+    echo (Paketi kendiniz uretmek icin: windows\paket-olustur.ps1 — tek dosya yeter.)
     pause
     exit /b 1
 )
@@ -40,7 +41,7 @@ if exist "%~dp0.env" (
     call npx drizzle-kit push --config=drizzle.config.ts
 ) else (
     echo [UYARI] .env dosyasi bulunamadi! .env.example dosyasini .env olarak kopyalayip
-    echo PostgreSQL adresinizi yazin veya gomulu kurulum icin KURULUM-EXE-OLUSTUR-WINDOWS.bat calistirin.
+    echo PostgreSQL adresinizi yazin veya gomulu kurulum icin windows\paket-olustur.ps1 calistirin.
 )
 
 echo.

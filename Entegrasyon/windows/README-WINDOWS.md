@@ -40,7 +40,7 @@ Geliştirici makinesinde Node.js 22+ gerekir. Son kullanıcıda gerekmez.
 
 `powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1`
 
-Paketleyici tip üretimi, TypeScript ve üretim derlemesini kontrol eder; sabitlenmiş Node.js 22.22.3 ve PostgreSQL 16.13-1 x64 dosyalarını indirir. Node arşivi resmi SHA-256 ile doğrulanır. Geliştirme `.env` dosyaları çıkarılır. `manifest.json` sürüm ve arşiv hashlerini içerir. Ardından Inno Setup 6 ile `windows/installer.iss` derlenir.
+Paketleyici tek dosyadır (`windows/paket-olustur.ps1`): tip üretimini, TypeScript ve üretim derlemesini kontrol eder; sabitlenmiş Node.js 22.22.3, PostgreSQL 16.13-1 x64 ve **Microsoft Visual C++ Redistributable** dosyalarını indirir. Node arşivi resmi SHA-256 ile, Visual C++ kurucusu Microsoft imzası ile doğrulanır. Geliştirme `.env` dosyaları çıkarılır. `manifest.json` sürüm ve arşiv hashlerini içerir. Ardından `installer.iss` dosyasını **kendi içinde üretir** ve Inno Setup 6 ile `Personel26-Kurulum.exe`'yi derler — Inno Setup kurulu değilse önce sessizce kurmayı dener (winget, sonra choco). Yalnızca taşınabilir paket için `-NoExe`, yalnızca ZIP için `-NoExe -NoZip` bayraklarını kullanın.
 
 ## Otomatik Windows testleri
 

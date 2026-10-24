@@ -38,16 +38,9 @@ jobs:
         run: npx tsc --noEmit --pretty false
       - name: Üretim derlemesi
         run: npm run build
-      - name: Taşınabilir paket üret
+      - name: Taşınabilir paket ve kurulum .exe üret (tek betik)
         shell: pwsh
         run: ./windows/paket-olustur.ps1 -SkipBuild
-      - name: Kurulum dosyasını derle
-        shell: pwsh
-        run: |
-          $compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-          if (-not (Test-Path $compiler)) { choco install innosetup --yes --no-progress }
-          & $compiler windows/installer.iss
-          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup derlemesi başarısız.' }
       # uses adımları working-directory'den etkilenmez → yollar açıkça yazılır
       - uses: actions/upload-artifact@v4
         with:

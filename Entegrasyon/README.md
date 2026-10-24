@@ -35,7 +35,7 @@ Depoyu `https://github.com/CehennemGibiyim/Entegrasyon` adresinin kök dizinine 
 ## 2. Windows Bilgisayarda Kurulum ve Çalıştırma
 
 ### Seçenek A — Sıfır Kurulumlu Kurulum Sihirbazı / Taşınabilir Paket (Önerilen)
-- GitHub Actions **Actions → Windows paketleme ve kurulum testleri → `windows-distribution`** bölümünden indirdiğiniz **`Personel26-Kurulum.exe`** dosyasını çift tıklayarak kurun (veya kendi bilgisayarınızda üretmek için kök dizindeki **`KURULUM-EXE-OLUSTUR-WINDOWS.bat`** dosyasını çalıştırın).
+- GitHub Actions **Actions → Windows paketleme ve kurulum testleri → `windows-distribution`** bölümünden indirdiğiniz **`Personel26-Kurulum.exe`** dosyasını çift tıklayarak kurun (veya kendi bilgisayarınızda tek betikle üretmek için `powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1` çalıştırın).
 - Masaüstüne gelen kısayol veya `Personel26-Baslat.bat` gömülü PostgreSQL 16 ve Node.js 22'yi otomatik başlatıp birleşik **ORION FaceGate × Puantaj26** ekranını açar.
 
 ### Seçenek B — Geliştirici Modunda Hızlı Başlatma

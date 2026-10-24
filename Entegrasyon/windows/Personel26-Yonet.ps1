@@ -136,6 +136,25 @@ function Native-Backup([string]$Destination) {
   Write-Host "SQL yedegi: $Destination"
   return $Destination
 }
+# Temiz Windows'ta Visual C++ calisma zamani (vcruntime140/msvcp140) yoksa
+# paketle gelen resmi Microsoft kurucusunu calistir; PostgreSQL bunlara muhtac.
+function Ensure-VcRuntime {
+  $sys32 = Join-Path $env:SystemRoot 'System32'
+  if ((Test-Path (Join-Path $sys32 'vcruntime140.dll')) -and (Test-Path (Join-Path $sys32 'msvcp140.dll'))) { return }
+  $redist = Join-Path $Root 'vc_redist.x64.exe'
+  if (-not (Test-Path $redist)) { return }
+  Write-Host 'Visual C++ calisma zamani bulunamadi — Microsoft Visual C++ Redistributable kuruluyor...'
+  Write-Host '(Windows onay penceresi cikarsa "Evet" deyin.)'
+  try {
+    $p = Start-Process -FilePath $redist -ArgumentList '/install','/passive','/norestart' -PassThru -Wait
+    if ($p.ExitCode -in 0,1641,3010) { Write-Host 'Visual C++ calisma zamani hazir.' }
+    else { Write-Host "UYARI: Visual C++ kurulusu kod $($p.ExitCode) ile bitti; PostgreSQL baslamazsa kurulumu elle tamamlayin." -ForegroundColor Yellow }
+  } catch {
+    Write-Host "UYARI: Visual C++ kurulumu calistirilamadi: $($_.Exception.Message)" -ForegroundColor Yellow
+  }
+}
+if ($Action -ne 'Stop') { Ensure-VcRuntime }
+
 switch ($Action) {
   'Start' { Start-App; if (-not $NoBrowser -and $env:P26_NO_BROWSER -ne '1') { Start-Process "http://127.0.0.1:$($Config.appPort)" }; Write-Host 'Personel26 hazir.' }
   'Backup' { Native-Backup $BackupFile | Out-Null }
