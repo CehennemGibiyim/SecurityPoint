@@ -2,12 +2,22 @@ import type { FaceDetectionResult, FacePoint } from "@/types/face-api";
 
 let modelsPromise: Promise<void> | null = null;
 
-function loadScript(): Promise<void> {
+function loadScript(attempt = 0): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.faceapi) return Promise.resolve();
   return new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>("script[data-faceapi]");
     if (existing) {
+      // Etiket DOM'da ama script çoktan bittiyse load olayı bir daha tetiklenmez (race).
+      if (window.faceapi) {
+        resolve();
+        return;
+      }
+      const state = (existing as HTMLScriptElement & { readyState?: string }).readyState;
+      if (state === "complete") {
+        reject(new Error("face-api yüklenemedi"));
+        return;
+      }
       existing.addEventListener("load", () => resolve(), { once: true });
       existing.addEventListener("error", () => reject(new Error("face-api yüklenemedi")), {
         once: true,
@@ -20,7 +30,17 @@ function loadScript(): Promise<void> {
     script.async = true;
     script.dataset.faceapi = "true";
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("face-api yüklenemedi"));
+    script.onerror = () => {
+      script.remove();
+      // Geçici ağ hatalarına karşı tek yeniden deneme (kalıcı hatada dur).
+      if (attempt < 1) {
+        setTimeout(() => {
+          loadScript(attempt + 1).then(resolve).catch(reject);
+        }, 1200);
+      } else {
+        reject(new Error("face-api yüklenemedi"));
+      }
+    };
     document.body.appendChild(script);
   });
 }
