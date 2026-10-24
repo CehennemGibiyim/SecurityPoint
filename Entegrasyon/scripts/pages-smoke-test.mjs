@@ -492,49 +492,52 @@ await freshPg.close();
 // ───────────────────────────────────────────────
 console.log("\n5) Yüz tanıma motoru varlıkları doğrulanıyor…");
 const fsAsset = await import("node:fs/promises");
-const buildInfo = JSON.parse(
-  await fsAsset.readFile(path.join(root, "_site", "p26-build.json"), "utf8"),
-);
-const assetBase = path.join(root, "_site", String(buildInfo.basePath ?? "").replace(/^\//, ""));
-const faceAssets = [
-  ["vendor/face-api.min.js", 500_000],
-  ["models/tiny_face_detector_model-weights_manifest.json", 1_000],
-  ["models/tiny_face_detector_model.bin", 150_000],
-  ["models/face_landmark_68_model-weights_manifest.json", 1_000],
-  ["models/face_landmark_68_model.bin", 300_000],
-  ["models/face_recognition_model-weights_manifest.json", 1_000],
-  ["models/face_recognition_model.bin", 5_000_000],
-];
-for (const [rel, minSize] of faceAssets) {
-  let size = -1;
-  try {
-    size = (await fsAsset.stat(path.join(assetBase, rel))).size;
-  } catch {
-    /* dosya yok */
-  }
-  check(`Yüz motoru varlığı yayımlandı: ${rel}`, size >= minSize, `boyut ${size} bayt (beklenen ≥ ${minSize})`);
-}
-// Manifest tutarlılığı: manifestin andığı ağırlık dosyaları klasörde mevcut mu?
-for (const manifestName of [
-  "tiny_face_detector_model-weights_manifest.json",
-  "face_landmark_68_model-weights_manifest.json",
-  "face_recognition_model-weights_manifest.json",
-]) {
-  const manifest = JSON.parse(await fsAsset.readFile(path.join(assetBase, "models", manifestName), "utf8"));
-  const refs = manifest.flatMap((entry) => entry.paths ?? []);
-  const missing = [];
-  for (const ref of refs) {
+// basePath yalnızca URL önekidir; pages-serve istekte öneki soyar, dosyalar
+// her zaman _site/ kökünde durur (public/ kopyalaması dahil).
+const assetBase = path.join(root, "_site");
+if (!existsSync(path.join(assetBase, "p26-build.json"))) {
+  console.log("   (not: _site çıktısı yok — Pages derlemesi bu koşuda yapılmamış, varlık kontrolü atlandı)");
+} else {
+  const faceAssets = [
+    ["vendor/face-api.min.js", 500_000],
+    ["models/tiny_face_detector_model-weights_manifest.json", 1_000],
+    ["models/tiny_face_detector_model.bin", 150_000],
+    ["models/face_landmark_68_model-weights_manifest.json", 1_000],
+    ["models/face_landmark_68_model.bin", 300_000],
+    ["models/face_recognition_model-weights_manifest.json", 1_000],
+    ["models/face_recognition_model.bin", 5_000_000],
+  ];
+  for (const [rel, minSize] of faceAssets) {
+    let size = -1;
     try {
-      await fsAsset.stat(path.join(assetBase, "models", ref));
+      size = (await fsAsset.stat(path.join(assetBase, rel))).size;
     } catch {
-      missing.push(ref);
+      /* dosya yok */
     }
+    check(`Yüz motoru varlığı yayımlandı: ${rel}`, size >= minSize, `boyut ${size} bayt (beklenen ≥ ${minSize})`);
   }
-  check(
-    `Manifest tutarlı: ${manifestName}`,
-    refs.length > 0 && missing.length === 0,
-    missing.length ? `eksik dosyalar: ${missing.join(", ")}` : `${refs.length} ağırlık referansı yerinde`,
-  );
+  // Manifest tutarlılığı: manifestin andığı ağırlık dosyaları klasörde mevcut mu?
+  for (const manifestName of [
+    "tiny_face_detector_model-weights_manifest.json",
+    "face_landmark_68_model-weights_manifest.json",
+    "face_recognition_model-weights_manifest.json",
+  ]) {
+    const manifest = JSON.parse(await fsAsset.readFile(path.join(assetBase, "models", manifestName), "utf8"));
+    const refs = manifest.flatMap((entry) => entry.paths ?? []);
+    const missing = [];
+    for (const ref of refs) {
+      try {
+        await fsAsset.stat(path.join(assetBase, "models", ref));
+      } catch {
+        missing.push(ref);
+      }
+    }
+    check(
+      `Manifest tutarlı: ${manifestName}`,
+      refs.length > 0 && missing.length === 0,
+      missing.length ? `eksik dosyalar: ${missing.join(", ")}` : `${refs.length} ağırlık referansı yerinde`,
+    );
+  }
 }
 
 // ───────────────────────────────────────────────
