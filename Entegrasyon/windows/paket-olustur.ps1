@@ -121,7 +121,7 @@ Copy-Item (Get-ChildItem "$NodeTmp\*\node.exe").FullName "$Out\node\node.exe"
 Expand-Archive $PgZip -DestinationPath $PgTmp
 New-Item -ItemType Directory -Force -Path "$Out\pgsql" | Out-Null
 foreach ($dir in @('bin','lib','share')) { Copy-Item "$PgTmp\pgsql\$dir" "$Out\pgsql\$dir" -Recurse -Force }
-foreach ($file in @('Personel26-Baslat.bat','Personel26-Durdur.bat','Personel26-Yedekle.bat','Personel26-Yonet.ps1','schema.sql','schema-update.sql')) { Copy-Item (Join-Path $PSScriptRoot $file) $Out -Force }
+foreach ($file in @('Personel26-Baslat.bat','Personel26-Durdur.bat','Personel26-Yedekle.bat','Personel26-Kiosk.bat','Personel26-Yonet.ps1','schema.sql','schema-update.sql')) { Copy-Item (Join-Path $PSScriptRoot $file) $Out -Force }
 Copy-Item (Join-Path $PSScriptRoot 'README-WINDOWS.md') (Join-Path $Out 'BENIOKU.md')
 # Temiz Windows'ta Visual C++ yoksa kurulabilsin diye pakete dahil edilir.
 Copy-Item $VcFile (Join-Path $Out 'vc_redist.x64.exe') -Force
@@ -201,15 +201,22 @@ Source: "{#PortableDir}\*"; DestDir: "{app}"; Excludes: "data\*"; Flags: recurse
 Name: "{group}\{#AppName} Başlat"; Filename: "{app}\Personel26-Baslat.bat"; WorkingDir: "{app}"
 Name: "{group}\{#AppName} Durdur"; Filename: "{app}\Personel26-Durdur.bat"; WorkingDir: "{app}"
 Name: "{group}\{#AppName} Yedekle"; Filename: "{app}\Personel26-Yedekle.bat"; WorkingDir: "{app}"
+Name: "{group}\{#AppName} Kapı Kiosk (tam ekran)"; Filename: "{app}\Personel26-Kiosk.bat"; WorkingDir: "{app}"
 Name: "{group}\{#AppName} Kaldır"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\Personel26-Baslat.bat"; WorkingDir: "{app}"; Tasks: desktopicon
 [Tasks]
 Name: "desktopicon"; Description: "Masaüstü kısayolu oluştur"; GroupDescription: "Kısayollar:"
+Name: "otomatikbaslat"; Description: "Windows açılışında Personel26 otomatik başlatılsın"; GroupDescription: "Otomatik:"; Flags: checkedonce
+Name: "gunlukyedek"; Description: "Her gün 19:00'da otomatik SQL yedek alınsın"; GroupDescription: "Otomatik:"; Flags: checkedonce
 [Run]
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoStart"; Flags: runhidden; Tasks: otomatikbaslat
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoBackup"; Flags: runhidden; Tasks: gunlukyedek
 Filename: "{app}\vc_redist.x64.exe"; Description: "Gerekirse Microsoft Visual C++ çalışma zamanını kur"; Parameters: "/install /passive /norestart"; Flags: postinstall shellexec skipifsilent; Check: not VCInstalled
 Filename: "{app}\Personel26-Baslat.bat"; Description: "{#AppName} şimdi başlatılsın"; Flags: postinstall nowait skipifsilent shellexec
 [UninstallRun]
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action Stop"; Flags: runhidden; RunOnceId: "StopP26"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoStartOff"; Flags: runhidden; RunOnceId: "AutoStartOff"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoBackupOff"; Flags: runhidden; RunOnceId: "AutoBackupOff"
 [Code]
 function VCInstalled: Boolean;
 begin

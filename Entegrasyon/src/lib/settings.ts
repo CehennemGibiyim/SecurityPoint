@@ -1,10 +1,16 @@
 import { THEMES, normalizeCustomThemes, type Theme } from "@/lib/themes";
 import { parseStaffGroup, isCustomGroup } from "@/lib/shared";
+export type SmtpSettings = {
+  /** E-posta bildirimleri ücretsiz çalışır: kendi e-posta hesabınızın SMTP bilgilerini girin (ör. Gmail uygulama şifresi). */
+  enabled: boolean; host: string; port: number; secure: boolean; user: string; pass: string; from: string; to: string;
+};
 export type AppSettings = {
   institution: string; shortName: string; email: string; phone: string; address: string; logo: string | null;
   theme: string; /** Açıkken tema, işletim sisteminin açık/koyu tercihini izler (yeni kurulumlarda varsayılan). */ themeAuto: boolean; /** Kullanıcının oluşturduğu temalar (en çok 10). */ customThemes: Theme[]; compact: boolean; reducedMotion: boolean; maskTc: boolean;
   autoBackup: boolean; backupRetention: number;
   notifyImports: boolean; notifySystem: boolean; notifyBackups: boolean;
+  /** İzin onay/red gibi olaylarda ücretsiz SMTP ile e-posta bildirimi (kendi hesabınızla). */
+  smtp: SmtpSettings;
   /** Elle eklenen nöbet grupları ("OZEL:<ad>"); personeli olmayanlar da yedeğe girsin diye veritabanında saklanır. */
   customGroups: string[];
 };
@@ -13,6 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: "original", themeAuto: true, customThemes: [], compact: false, reducedMotion: false, maskTc: true,
   autoBackup: true, backupRetention: 30,
   notifyImports: true, notifySystem: true, notifyBackups: true,
+  smtp: { enabled: false, host: "", port: 465, secure: true, user: "", pass: "", from: "", to: "" },
   customGroups: [],
 };
 export function validateSettings(input: unknown): AppSettings {
@@ -42,6 +49,19 @@ export function validateSettings(input: unknown): AppSettings {
   const retention = Number(value.backupRetention);
   if (!Number.isInteger(retention) || retention < 5 || retention > 365) throw new Error("Yedek saklama adedi 5–365 arasında olmalıdır.");
   result.backupRetention = retention;
+  // SMTP (ücretsiz e-posta bildirimi): yalnızca girilen alanlar; eski kayıtlarda alan yoksa varsayılan.
+  const smtpIn = (value.smtp ?? {}) as Record<string, unknown>;
+  const smtp: SmtpSettings = { ...DEFAULT_SETTINGS.smtp };
+  smtp.enabled = smtpIn.enabled === true;
+  smtp.secure = typeof smtpIn.secure === "boolean" ? smtpIn.secure : DEFAULT_SETTINGS.smtp.secure;
+  for (const key of ["host", "user", "pass", "from", "to"] as const) {
+    const raw = smtpIn[key];
+    if (raw !== undefined && raw !== null && typeof raw !== "string") throw new Error("Geçersiz SMTP ayarı.");
+    smtp[key] = typeof raw === "string" ? raw.trim().slice(0, 400) : smtp[key];
+  }
+  const smtpPort = Number(smtpIn.port);
+  smtp.port = Number.isInteger(smtpPort) && smtpPort >= 1 && smtpPort <= 65535 ? smtpPort : DEFAULT_SETTINGS.smtp.port;
+  result.smtp = smtp;
   result.customGroups = cleanCustomGroups(value.customGroups);
   return result;
 }

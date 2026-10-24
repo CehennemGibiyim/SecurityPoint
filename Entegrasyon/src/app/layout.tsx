@@ -7,6 +7,7 @@ import "./globals.css";
 import "./settings.css";
 import ThemeLoader from "@/components/ThemeLoader";
 import BrowserDbGate from "@/components/BrowserDbGate";
+import AuthGate from "@/components/auth-gate";
 import { BROWSER_BOOT_INLINE } from "@/lib/browser-db/inline-boot";
 
 const manrope = Manrope({
@@ -48,7 +49,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </>
         ) : null}
         <ThemeLoader />
-        {BROWSER_DB ? <BrowserDbGate>{children}</BrowserDbGate> : children}
+        {BROWSER_DB ? (
+          <BrowserDbGate>
+            <AuthGate>{children}</AuthGate>
+          </BrowserDbGate>
+        ) : (
+          <AuthGate>{children}</AuthGate>
+        )}
       </body>
     </html>
   );

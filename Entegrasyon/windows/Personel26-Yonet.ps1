@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('Start','Stop','Backup','Restore','Update')][string]$Action = 'Start',
+  [ValidateSet('Start','Stop','Backup','Restore','Update','AutoStart','AutoStartOff','AutoBackup','AutoBackupOff','Kiosk')][string]$Action = 'Start',
   [string]$BackupFile,
   [string]$PackagePath,
   [switch]$NoBrowser
@@ -11,6 +11,39 @@ $PgBin = Join-Path $Root 'pgsql\bin'
 $PgData = Join-Path $Data 'pgdata'
 $RuntimeFile = Join-Path $Data 'runtime.json'
 $ConfigFile = Join-Path $Data 'connection.json'
+# Otomatik acilis (Windows otomatik baslatma klasoru) ve gunluk yedek gorevi.
+$TaskName = 'Personel26 Gunluk Yedek'
+$StartupFile = Join-Path ([Environment]::GetFolderPath('Startup')) 'Personel26-Baslangic.vbs'
+
+# Yonetim eylemleri: veritabani/sunucu kurulumuna dokunmadan calisir
+# (kurulum ve kaldirma sirasinda dosyalar yerindedir, yonetici yetkisi gerekmez).
+function Set-AutoStart([bool]$Enable) {
+  if ($Enable) {
+    $psPath = Join-Path $Root 'Personel26-Yonet.ps1'
+    $cmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $psPath + '" -Action Start'
+    $content = 'Set sh = CreateObject("WScript.Shell")' + "`r`n" + 'sh.Run "' + ($cmd -replace '"','""') + '", 0, False' + "`r`n"
+    # UTF-8 BOM ile yazilir ki WSH Turkce karakterli yollari dogru okusun.
+    [IO.File]::WriteAllText($StartupFile, $content, [Text.UTF8Encoding]::new($true))
+    Write-Host "Otomatik baslatma acildi (Windows acilis klasoru): $StartupFile"
+  } else {
+    Remove-Item $StartupFile -Force -ErrorAction SilentlyContinue
+    Write-Host 'Otomatik baslatma kapatildi.'
+  }
+}
+function Set-AutoBackup([bool]$Enable) {
+  if ($Enable) {
+    $psPath = Join-Path $Root 'Personel26-Yonet.ps1'
+    $tr = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $psPath + '" -Action Backup'
+    & schtasks.exe /Create /TN $TaskName /SC DAILY /ST 19:00 /TR ('"' + $tr + '"') /F | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Gunluk yedek gorevi olusturulamadi.' }
+    Write-Host "Gunluk otomatik yedek acildi (her gun 19:00): $TaskName"
+  } else {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & schtasks.exe /Delete /TN $TaskName /F *> $null } finally { $ErrorActionPreference = $prev }
+    Write-Host 'Gunluk otomatik yedek gorevi silindi.'
+  }
+}
 function Invoke-Pg([string]$Tool, [string[]]$Arguments) {
   $Executable = Join-Path $PgBin ($Tool + '.exe')
   if (-not (Test-Path $Executable)) { throw "Pakette $Tool bulunamadi." }
@@ -47,6 +80,15 @@ function Stop-All {
   Write-Host 'Personel26 kapatildi. Veriler data klasorunde korundu.'
 }
 if ($Action -eq 'Stop') { Stop-All; exit 0 }
+if ($Action -in 'AutoStart','AutoStartOff','AutoBackup','AutoBackupOff') {
+  switch ($Action) {
+    'AutoStart'     { Set-AutoStart $true }
+    'AutoStartOff'  { Set-AutoStart $false }
+    'AutoBackup'    { Set-AutoBackup $true }
+    'AutoBackupOff' { Set-AutoBackup $false }
+  }
+  exit 0
+}
 if (-not (Test-Path (Join-Path $Root 'node\node.exe')) -or -not (Test-Path (Join-Path $PgBin 'postgres.exe'))) { throw 'Pakette tasinabilir Node.js veya PostgreSQL eksik.' }
 New-Item -ItemType Directory -Force -Path $Data | Out-Null
 if (-not (Test-Path $ConfigFile)) {
@@ -157,6 +199,18 @@ if ($Action -ne 'Stop') { Ensure-VcRuntime }
 
 switch ($Action) {
   'Start' { Start-App; if (-not $NoBrowser -and $env:P26_NO_BROWSER -ne '1') { Start-Process "http://127.0.0.1:$($Config.appPort)" }; Write-Host 'Personel26 hazir.' }
+  'Kiosk' {
+    Start-App
+    $url = "http://127.0.0.1:$($Config.appPort)/terminal?kiosk=1"
+    $edge = @(
+      "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
+      "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
+      "$env:LOCALAPPDATA\Microsoft\Edge\Application\msedge.exe"
+    ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+    if ($edge) { Start-Process -FilePath $edge -ArgumentList @('--kiosk', $url, '--edge-kiosk-type=fullscreen') }
+    else { Start-Process $url }
+    Write-Host "Kiosk modu acildi: $url"
+  }
   'Backup' { Native-Backup $BackupFile | Out-Null }
   'Restore' {
     if (-not $BackupFile -or -not (Test-Path $BackupFile) -or [IO.Path]::GetExtension($BackupFile) -ne '.sql') { throw 'Gecerli bir Personel26 SQL yedegi secin.' }

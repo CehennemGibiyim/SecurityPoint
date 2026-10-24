@@ -13,6 +13,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { FaceScanner } from "@/components/face-scanner";
+import { logoutP26 } from "@/components/auth-gate";
 import { Avatar, Badge, Button, cn } from "@/components/ui";
 import { jsonFetch } from "@/lib/api-client";
 import { beep } from "@/lib/face-client";
@@ -52,6 +53,23 @@ export default function TerminalPage() {
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
   const [queued, setQueued] = useState(0);
+  // Kiosk modu: /terminal?kiosk=1 → ilk dokunuşta tam ekran (tarayıcılar
+  // kullanıcı etkileşimi olmadan tam ekranı açmaya izin vermez).
+  const [kiosk, setKiosk] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("kiosk")) setKiosk(true);
+    const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFullscreen);
+    return () => document.removeEventListener("fullscreenchange", onFullscreen);
+  }, []);
+
+  const enterFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      void document.documentElement.requestFullscreen().catch(() => { /* izin yoksa düz devam */ });
+    }
+  }, []);
 
   // Ağ kesintisi tamponu: kapı + yetki anlık görüntüsü al, kuyruğu boşalt;
   // bağlantı koptuysa son bilinen listeyle devam et.
@@ -159,7 +177,7 @@ export default function TerminalPage() {
   }
 
   return (
-    <div className="orion-grid min-h-screen">
+    <div className="orion-grid min-h-screen" onClickCapture={kiosk ? enterFullscreen : undefined}>
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 md:px-8">
         <header className="mb-4 flex items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white">
@@ -179,6 +197,14 @@ export default function TerminalPage() {
             ) : queued > 0 ? (
               <Badge tone="warn">Kuyrukta {queued} olay</Badge>
             ) : null}
+            <button
+              type="button"
+              onClick={logoutP26}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-slate-400 transition hover:border-rose-400/40 hover:text-rose-300"
+              title="Yönetici oturumunu kapat"
+            >
+              <LogOut className="h-3 w-3" /> Çıkış
+            </button>
           </div>
         </header>
 
@@ -325,6 +351,12 @@ export default function TerminalPage() {
           </div>
         </div>
       </div>
+
+      {kiosk && !fullscreen ? (
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-cyan-400/30 bg-[#06080f]/95 px-5 py-2.5 text-xs text-cyan-200 shadow-lg shadow-black/50">
+          Kiosk modu — tam ekran için ekrana dokunun / tıklayın (ESC ile çıkılır)
+        </div>
+      ) : null}
     </div>
   );
 }

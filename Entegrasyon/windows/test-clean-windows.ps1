@@ -32,6 +32,11 @@ try {
   Expand-Archive $Zip -DestinationPath $Package
   $install = Start-Process $Installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=`"$Target`"","/LOG=`"$ReportDir\install.log`"") -Wait -PassThru
   Assert-Check 'Sessiz kullanici kurulumu' ($install.ExitCode -eq 0 -and (Test-Path (Join-Path $Target 'app\server.js')))
+  # Otomatik acilis kaydi ve gunluk yedek gorevi (varsayilan isaretli gorevler).
+  $StartupFile = Join-Path ([Environment]::GetFolderPath('Startup')) 'Personel26-Baslangic.vbs'
+  Assert-Check 'Otomatik acilis kaydi olusturuldu' (Test-Path $StartupFile)
+  & schtasks.exe /Query /TN 'Personel26 Gunluk Yedek' | Out-Null
+  Assert-Check 'Gunluk yedek gorevi olusturuldu' ($LASTEXITCODE -eq 0)
   # GitHub runner'lari gercek bos Windows imajlari degildir. Bu test sistemdeki
   # Node/PostgreSQL'e erisimi kapatir ve SADECE paketlenmis exe'leri kullanir.
   Get-Service -Name '*postgres*' -ErrorAction SilentlyContinue | Where-Object {$_.Status -eq 'Running'} | Stop-Service -Force -ErrorAction SilentlyContinue
@@ -88,6 +93,17 @@ try {
   Manager 'Start'
   Assert-Check 'Kurulum guncellemesi veri klasorunu korudu' ((Api '/api/personnel').personnel.Count -eq $Before)
   Manager 'Stop'
+  # Otomatik gorevler yonetim eylemleriyle acilip kapanabilmeli (kurulum disi kullanim).
+  Manager 'AutoStart'
+  Manager 'AutoBackup'
+  Assert-Check 'Otomatik acilis elle de acilabiliyor' (Test-Path $StartupFile)
+  & schtasks.exe /Query /TN 'Personel26 Gunluk Yedek' | Out-Null
+  Assert-Check 'Yedek gorevi elle de olusturulabiliyor' ($LASTEXITCODE -eq 0)
+  Manager 'AutoStartOff'
+  Manager 'AutoBackupOff'
+  Assert-Check 'Otomatik acilis kapatildi' (-not (Test-Path $StartupFile))
+  & schtasks.exe /Query /TN 'Personel26 Gunluk Yedek' | Out-Null
+  Assert-Check 'Gunluk yedek gorevi silindi' ($LASTEXITCODE -ne 0)
 } catch {
   $_ | Out-String | Set-Content (Join-Path $ReportDir 'failure.txt') -Encoding UTF8
   throw

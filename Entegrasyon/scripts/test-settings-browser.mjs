@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 const base = process.env.TEST_BASE_URL ?? 'http://127.0.0.1:3000';
@@ -10,6 +11,14 @@ const original = await (await fetch(base + '/api/settings')).json();
 const boot = await (await fetch(base + '/api/bootstrap')).json();
 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] });
 const page = await browser.newPage();
+// Yönetici girişi kapısı: test, gerçek girişle aynı oturum imzasını kurar
+// (kullanıcı adı + PIN karma formülü src/components/auth-gate.tsx ile birebir aynıdır).
+const AUTH_USER = 'CehennemGibiyim';
+const sessionExp = Date.now() + 30 * 86400000;
+const sessionSig = createHash('sha256').update(`orion-facegate-p26|session|${AUTH_USER}|${sessionExp}`).digest('hex');
+await page.evaluateOnNewDocument(({ user, exp, sig }) => {
+  localStorage.setItem('p26-admin-session', JSON.stringify({ u: user, exp, sig }));
+}, { user: AUTH_USER, exp: sessionExp, sig: sessionSig });
 const pageErrors = [];
 let passed = 0;
 function check(name, condition) { assert.ok(condition, name); passed++; console.log('PASS', name); }

@@ -18,6 +18,7 @@ import {
   DoorOpen,
   Fingerprint,
   LayoutTemplate,
+  LogOut,
   Megaphone,
   Repeat,
   Scale,
@@ -32,6 +33,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { LiveClock } from "@/components/live-clock";
+import { logoutP26 } from "@/components/auth-gate";
 import { cn } from "@/components/ui";
 import { withBasePath } from "@/lib/asset-path";
 
@@ -379,7 +381,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 ? "Puantaj26 resmi nöbet, aylık çalışma cetveli, bordro ve onay modülleri"
                 : "Yüz tanımalı giriş-çıkış, biyometrik kadro, imza ve kapı yetki platformu"}
             </div>
-            <LiveClock className="text-right" />
+            <div className="flex items-center gap-3">
+              <LiveClock className="text-right" />
+              <button
+                type="button"
+                onClick={logoutP26}
+                title="Oturumu kapat (çıkış)"
+                aria-label="Oturumu kapat"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition hover:border-rose-400/40 hover:text-rose-300"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </header>
 
           <div className="mobile-chip-nav flex gap-2 overflow-x-auto border-b border-white/5 px-3 py-2 lg:hidden">

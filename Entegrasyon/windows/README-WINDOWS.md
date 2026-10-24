@@ -34,6 +34,33 @@ Alternatif olarak yeni portable klasörünü kullanın:
 
 Bu akış SQL güvenlik yedeği alır, yalnızca uygulamayı değiştirir ve sağlık kontrolü yapar. Başlatma başarısızsa eski uygulama klasörü geri alınır. Bu güncelleme PostgreSQL ana sürümünü değiştirmez; 16→17 gibi geçişler ayrıca `pg_upgrade` / yedekten taşıma ile planlanmalıdır. Kaldırma sırasında `data` klasörü otomatik silinmez.
 
+## Otomatik açılış ve günlük otomatik yedek
+
+Ücretsizdir; yönetici yetkisi gerektirmez.
+
+- **Kurulum sırasında**: kurulum sihirbazında *"Windows açılışında Personel26 otomatik başlatılsın"* ve *"Her gün 19:00'da otomatik SQL yedek alınsın"* seçenekleri varsayılan olarak işaretlidir. Kaldırma (Uninstall) bu ikisini de kendiliğinden temizler.
+- **Elle açmak/kapatmak için** (kurulum yapmadan portable kullananlar dahil):
+
+`powershell -NoProfile -ExecutionPolicy Bypass -File .\Personel26-Yonet.ps1 -Action AutoStart`
+
+`powershell -NoProfile -ExecutionPolicy Bypass -File .\Personel26-Yonet.ps1 -Action AutoBackup`
+
+Kapatmak için `AutoStartOff` / `AutoBackupOff`. Otomatik açılış, Windows otomatik başlangıç klasörüne gizli çalışan bir başlatıcı yazar; günlük yedek, saat 19:00'da `Personel26-Yonet.ps1 -Action Backup` çalıştırır ve SQL dosyaları `data/backups` içinde birikir.
+
+## Kiosk modu (kapı terminali)
+
+- **Personel26-Kiosk.bat** (Başlat menüsü: *Personel26 Kapı Kiosk (tam ekran)*) sunucuyu başlatır ve kapı terminalini Microsoft Edge'in kiosk (tam ekran, adres çubuksuz) modunda açar.
+- Tarayıcı tarafı: `/terminal?kiosk=1` adresi ilk dokunuşta tam ekrana geçer (tarayıcılar etkileşimsiz tam ekrana izin vermez); ESC ile çıkılır.
+- Edge yoksa varsayılan tarayıcıda aynı adres açılır; tam ekran için F11 kullanın.
+
+## Yönetici girişi
+
+Panel ve kapı terminali yönetici PIN'i ister (kullanıcı adı ve PIN panel ilk açıldığında sorulur; oturum 30 gün saklanır). Panel başlığındaki çıkış düğmesi veya terminaldeki *Çıkış* ile oturum kapatılır. PIN yalnızca karma (SHA-256) olarak paketlenir. Not: GitHub Pages (sunucusuz) sürümünde bu kapı yetkisiz göz atmayı engelleyen bir katmandır; kurum verisi tutan ortamlarda Windows (sunuculu) sürümü kullanın.
+
+## Ücretsiz e-posta bildirimi (kendi SMTP hesabınızla)
+
+**Ayarlar → Sistem → E-posta bildirimleri** alanından kendi e-posta hesabınızın SMTP bilgilerini girin (ücretsiz: Gmail *uygulama şifresi*, Outlook uygulama parolası vb.). İzin onay/red işlemlerinde ayarladığınız alıcıya bildirim gönderilir. İzin vermezseniz hiçbir e-posta gönderilmez; ek ücretli servis yoktur. Bu özellik sunuculu Windows sürümünde çalışır (GitHub Pages'de gönderim yapabilecek bir sunucu yoktur).
+
 ## Paket üretimi
 
 Geliştirici makinesinde Node.js 22+ gerekir. Son kullanıcıda gerekmez.
@@ -52,4 +79,4 @@ Test senaryoları: sessiz kurulum, ilk açılış, gerçek veritabanı sağlık 
 
 ## Veri güvenliği
 
-Yerel diskteki yedek fiziksel arızaya karşı yeterli değildir: harici disk yedeği tutun. Mevcut panelde kullanıcı girişi/rol kontrolü yoktur. Yerel ağ veya internet erişimi vermeden önce kimlik doğrulama, yetkilendirme ve TLS eklenmelidir. GitHub Pages sürümü verileri sadece o tarayıcının IndexedDB alanında tutar; kurumun ortak çok kullanıcılı veritabanı yerine geçmez.
+Yerel diskteki yedek fiziksel arızaya karşı yeterli değildir: harici disk yedeği tutun. Panel ve kapı terminali yönetici PIN girişi ile korunur; rol bazlı yetkiler henüz yoktur. Yerel ağ veya internet erişimi vermeden önce rol bazlı yetkilendirme ve (internet için) TLS/arka uç kilidi eklenmelidir. GitHub Pages sürümü verileri sadece o tarayıcının IndexedDB alanında tutar; kurumun ortak çok kullanıcılı veritabanı yerine geçmez.
