@@ -7,3 +7,7 @@
 import { bootstrapBrowserApp } from "./bridge";
 
 bootstrapBrowserApp();
+
+// Duman testi şema onarımını üretim paketiyle aynı kod üzerinden sınamak için
+// bu işlevleri kullanır (bkz. scripts/pages-smoke-test.mjs).
+export { createSchema, schemaExists, schemaStatements } from "./schema";

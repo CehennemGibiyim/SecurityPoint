@@ -100,7 +100,7 @@ globalThis.__P26_READY = ready;
 globalThis.fetch = globalThis.fetch; // Node'un kendi fetch'i köprü tarafından sarılır
 
 const t0 = Date.now();
-await import(pathToFileURL(path.join(workDir, "app.js")).href);
+const bridgeModule = await import(pathToFileURL(path.join(workDir, "app.js")).href);
 await ready;
 const bootMs = Date.now() - t0;
 console.log(`   ✓ Veritabanı ${bootMs} ms'de hazır${statusLog.length ? ` (${statusLog.join(" → ")})` : ""}`);
@@ -431,7 +431,61 @@ const info = await globalThis.__p26.info();
 check("Veritabanı özeti alındı", info.mode === "browser-pglite" && Number(info.personnel) >= 20, JSON.stringify(info).slice(0, 200));
 
 // ───────────────────────────────────────────────
-// 4) Sonuç
+// 4) Eski (Personel26) şemasıyla açılış onarımı — REGRESYON
+//
+// Kullanıcının tarayıcısındaki hâl: eski sürümün kısmi şemasında
+// `activity_logs` var, `employees` gibi tablolar yok. Eski `createSchema`
+// tüm DDL'i `IF NOT EXISTS` olmadan koşup "relation "activity_logs"
+// already exists" ile patlıyordu → sayfa hiç açılmıyordu.
+// ───────────────────────────────────────────────
+console.log("\n4) Eski şemayla açılış onarımı deneniyor…");
+const { createSchema, schemaExists, schemaStatements } = bridgeModule;
+check("Köprü şema işlevleri dışa aktarıldı", typeof createSchema === "function" && typeof schemaExists === "function");
+
+const { PGlite } = await import("@electric-sql/pglite");
+// Eski Personel26 şemasından alt küme: activity_logs KURULU, employees YOK.
+const legacyTables = new Set(["activity_logs", "app_settings", "departments", "personnel", "schema_versions", "timesheet_entries"]);
+const legacyPg = new PGlite();
+await legacyPg.waitReady;
+for (const statement of schemaStatements()) {
+  const table = /^CREATE TABLE "(\w+)"/.exec(statement);
+  if (table && legacyTables.has(table[1])) await legacyPg.exec(statement);
+}
+await legacyPg.exec("insert into activity_logs (action, description) values ('legacy', 'eski veri')");
+check("Eski kısmi şema kuruldu (employees eksik)", (await schemaExists(legacyPg)) === false);
+
+let legacyBootError = null;
+try {
+  await createSchema(legacyPg);
+} catch (error) {
+  legacyBootError = error;
+}
+check("Eski şemada createSchema hata vermedi (regresyon)", legacyBootError === null, String(legacyBootError?.message ?? ""));
+check("Eski şema onarıldı (tüm tablolar kurulu)", (await schemaExists(legacyPg)) === true);
+const legacyRow = await legacyPg.query("select count(*)::int as n from activity_logs where action = 'legacy'");
+check("Eski veriler korundu (activity_logs)", legacyRow.rows[0]?.n === 1, JSON.stringify(legacyRow.rows[0]));
+const employeesReg = await legacyPg.query("select to_regclass('public.employees') as t");
+check("Eksik tablolar tamamlandı (employees)", employeesReg.rows[0]?.t !== null, JSON.stringify(employeesReg.rows[0]));
+
+let secondRunError = null;
+try {
+  await createSchema(legacyPg);
+} catch (error) {
+  secondRunError = error;
+}
+check("createSchema ikinci kez de çalıştırıldı (idempotent)", secondRunError === null, String(secondRunError?.message ?? ""));
+await legacyPg.close();
+
+// Taze veritabanı yolu da değişmedi mi?
+const freshPg = new PGlite();
+await freshPg.waitReady;
+check("Taze DB'de şema eksik görülür", (await schemaExists(freshPg)) === false);
+await createSchema(freshPg);
+check("Taze DB'de şema kuruldu", (await schemaExists(freshPg)) === true);
+await freshPg.close();
+
+// ───────────────────────────────────────────────
+// 5) Sonuç
 // ───────────────────────────────────────────────
 console.log("\n═══════════════════════════════════════════");
 if (failures.length === 0) {
