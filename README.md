@@ -5,6 +5,8 @@ Kapı geçiş (biyometrik yüz tanıma) + PDKS / puantaj paneli. Tek depoda iki 
 
 > 🌐 Canlı panel (GitHub Pages): **https://cehennemgibiyim.github.io/SecurityPoint/**
 > ⚠ Tek seferlik ayar: **Settings → Pages → Source = GitHub Actions** (branch değil).
+> 📊 **Tanıtım sunumu (PDF):** [docs/SecurityPoint-Sunum.pdf](docs/SecurityPoint-Sunum.pdf) — menü menü anlatım, ekranlar, kurulum ve güvenlik sayfalarıyla 14 sayfalık pazarlama/kullanım sunumu.
+> 📖 **Uygulama içi kullanım kılavuzu:** panelde sol menü → **Yardım → Kullanım Kılavuzu** (`/yardim`).
 
 ## Depo yapısı
 

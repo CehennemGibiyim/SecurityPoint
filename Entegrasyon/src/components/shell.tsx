@@ -7,6 +7,7 @@ import {
   Activity,
   Banknote,
   BarChart3,
+  BookOpenText,
   CalendarClock,
   CalendarDays,
   ChevronDown,
@@ -46,7 +47,12 @@ type NavEntry = {
   grad: string;
   /** Personel26 içindeki alt grup (eski paneldeki ÇALIŞMA ALANI / YÖNETİM / AYARLAR). */
   group?: string;
-};
+}
+
+// Yardım bölümü — kullanım kılavuzu tek başına bir grup olarak durur.
+const HELP_NAV: NavEntry[] = [
+  { href: "/yardim", label: "Kullanım Kılavuzu", icon: BookOpenText, grad: "from-slate-400 to-slate-600", exact: true },
+];
 
 /** Renkli, yuvarlatılmış simge kutusu (Personel26 panelindeki gibi gradyanlı zemin üzerinde beyaz simge). */
 function NavIcon({ grad, active = true, children }: { grad: string; active?: boolean; children: React.ReactNode }) {
@@ -113,17 +119,17 @@ function P26SubGroupHeader({ label }: { label: string }) {
   );
 }
 
-const ALL_NAV = [...FACE_NAV, ...PUANTAJ26_NAV];
+const ALL_NAV = [...FACE_NAV, ...PUANTAJ26_NAV, ...HELP_NAV];
 
 /**
  * Sol menüdeki iki ana bölümün (Kapı Geçiş Sistemi / Personel26) açık-kapalı hali.
  * Tercih localStorage'da saklanır; ilk açılışta her ikisi de açıktır.
  */
 const NAV_COLLAPSE_KEY = "orion-nav-collapsed";
-type NavCollapsed = { doors: boolean; p26: boolean };
+type NavCollapsed = { doors: boolean; p26: boolean; help: boolean };
 
 function useNavCollapse(): [NavCollapsed, (key: keyof NavCollapsed) => void] {
-  const [collapsed, setCollapsed] = useState<NavCollapsed>({ doors: false, p26: false });
+  const [collapsed, setCollapsed] = useState<NavCollapsed>({ doors: false, p26: false, help: false });
 
   useEffect(() => {
     try {
@@ -131,9 +137,10 @@ function useNavCollapse(): [NavCollapsed, (key: keyof NavCollapsed) => void] {
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<NavCollapsed>;
         setCollapsed({
-          doors: Boolean(parsed.doors),
-          p26: Boolean(parsed.p26),
-        });
+        doors: Boolean(parsed.doors),
+        p26: Boolean(parsed.p26),
+        help: Boolean(parsed.help),
+      });
       }
     } catch {
       /* bozuk kayıt yok sayılır */
@@ -163,7 +170,7 @@ function NavGroupHeader({
   onToggle,
 }: {
   label: string;
-  accent: "cyan" | "amber";
+  accent: "cyan" | "amber" | "violet";
   collapsed: boolean;
   onToggle: () => void;
 }) {
@@ -176,7 +183,9 @@ function NavGroupHeader({
         "group mb-1 mt-4 flex w-full items-center justify-between gap-2 border-t px-2.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] transition first:mt-0 first:border-t-0 first:pt-1",
         accent === "cyan"
           ? "border-cyan-200/12 text-cyan-300/70 hover:text-cyan-200"
-          : "border-amber-200/12 text-amber-200/85 hover:text-amber-100",
+          : accent === "amber"
+            ? "border-amber-200/12 text-amber-200/85 hover:text-amber-100"
+            : "border-violet-300/15 text-violet-300/75 hover:text-violet-200",
       )}
     >
       <span className="truncate">{label}</span>
@@ -357,6 +366,35 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     <span className="truncate">{item.label}</span>
                   </Link>
                 </Fragment>
+              );
+            })}
+
+            <NavGroupHeader
+              label="Yardım"
+              accent="violet"
+              collapsed={collapsed.help}
+              onToggle={() => toggleCollapsed("help")}
+            />
+            {collapsed.help ? null : HELP_NAV.map((item) => {
+              const active = isRouteActive(pathname, item);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition",
+                    active
+                      ? "bg-violet-300/14 font-medium text-violet-200 ring-1 ring-violet-300/30"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white",
+                  )}
+                >
+                  <NavIcon grad={item.grad} active={active}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </NavIcon>
+                  <span className="truncate">{item.label}</span>
+                </Link>
               );
             })}
           </nav>

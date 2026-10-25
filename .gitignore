@@ -27,8 +27,12 @@ artifacts/
 
 # Bu ortamın yerel araç/yedek klasörleri
 .tools/
+.yer/
 .gitbackups/
 
 # İşletim sistemi
 .DS_Store
 Thumbs.db
+
+# Python
+__pycache__/
