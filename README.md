@@ -3,9 +3,9 @@
 Kapı geçiş (biyometrik yüz tanıma) + PDKS / puantaj paneli. Tek depoda iki parça barındırır:
 **çalışan Next.js uygulaması** ve **GitHub Actions iş akışları**.
 
-> 🌐 Canlı panel (GitHub Pages): **https://cehennemgibiyim.github.io/SecurityPoint/**
+> 🌐 Canlı panel (GitHub Pages): **https://cehennemgibiyim.github.io/Personel26/**
 > ⚠ Tek seferlik ayar: **Settings → Pages → Source = GitHub Actions** (branch değil).
-> 📊 **Tanıtım sunumu (PDF):** [docs/SecurityPoint-Sunum.pdf](docs/SecurityPoint-Sunum.pdf) — menü menü anlatım, ekranlar, kurulum ve güvenlik sayfalarıyla 14 sayfalık pazarlama/kullanım sunumu.
+> 📊 **Tanıtım sunumu (PDF):** [docs/SecurityPoint-Sunum.pdf](docs/Personel26-Sunum.pdf) — menü menü anlatım, ekranlar, kurulum ve güvenlik sayfalarıyla 14 sayfalık pazarlama/kullanım sunumu.
 > 📖 **Uygulama içi kullanım kılavuzu:** panelde sol menü → **Yardım → Kullanım Kılavuzu** (`/yardim`).
 
 ## Depo yapısı
