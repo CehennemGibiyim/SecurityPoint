@@ -1,5 +1,5 @@
 # SecurityPoint — ORION FaceGate × Puantaj26
-
+https://github.com/CehennemGibiyim/SecurityPoint/actions/runs/40246927388/artifacts/12619385433
 Kapı geçiş (biyometrik yüz tanıma) + PDKS / puantaj paneli. Tek depoda iki parça barındırır:
 **çalışan Next.js uygulaması** ve **GitHub Actions iş akışları**.
 
