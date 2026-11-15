@@ -48,8 +48,8 @@ jobs:
         with:
           name: windows-distribution
           path: |
-            Entegrasyon/Personel26-Portable.zip
-            Entegrasyon/windows/Personel26-Kurulum.exe
+            Entegrasyon/SecurityPoint-Portable.zip
+            Entegrasyon/windows/SecurityPoint-Kurulum.exe
           retention-days: 7
   clean-runtime:
     needs: package

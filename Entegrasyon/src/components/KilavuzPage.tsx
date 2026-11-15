@@ -44,7 +44,7 @@ const SECTIONS: Section[] = [
     items: [
       {
         title: "Erişim yolları",
-        what: "• Canlı panel (ücretsiz barındırma): cehennemgibiyim.github.io/SecurityPoint — tarayıcıda çalışır, veriler o tarayıcıda saklanır.\n• Windows kurulumu: Personel26 Kurulum (.exe) ile bilgisayara kurulur; kendi PostgreSQL sunucusuyla gelir, dosyalar yerelde kalır.",
+        what: "• Canlı panel (ücretsiz barındırma): cehennemgibiyim.github.io/SecurityPoint — tarayıcıda çalışır, veriler o tarayıcıda saklanır.\n• Windows kurulumu: SecurityPoint Kurulum (.exe) ile bilgisayara kurulur; kendi PostgreSQL sunucusuyla gelir, dosyalar yerelde kalır.",
       },
       {
         title: "Yönetici girişi",
@@ -84,7 +84,7 @@ const SECTIONS: Section[] = [
         title: "Yüz Terminali (Kapı ekranı)",
         what: "Kapıdaki ekrandır: yüzü okur, giriş/çıkış/mola imzası atlar, yetkiyi kontrol eder. Aynı anda birkaç kapı açılabilir.",
         effect: "Personel + yüz kaydı + vardiya + kapı yetkisi tamamsa geçiş ONAYLANIR; biri eksikse reddedilir ve gerekçesi yazar.",
-        steps: ["Tam ekran için: /terminal?kiosk=1", "Windows'ta: Personel26 Kiosk kısayolu (Edge kiosk modunda açar)", "ESC ile kiosk'tan çıkılır"],
+        steps: ["Tam ekran için: /terminal?kiosk=1", "Windows'ta: SecurityPoint Kiosk kısayolu (Edge kiosk modunda açar)", "ESC ile kiosk'tan çıkılır"],
       },
       {
         title: "Personel & Biyometri",
@@ -160,8 +160,8 @@ const SECTIONS: Section[] = [
   },
   {
     id: "p26",
-    title: "Personel26 (Puantaj) Menüleri",
-    desc: "Resmi nöbet, puantaj, bordro ve onay modülleri — sol menüde ‘Personel26’ grubu.",
+    title: "SecurityPoint (Puantaj) Menüleri",
+    desc: "Resmi nöbet, puantaj, bordro ve onay modülleri — sol menüde ‘SecurityPoint’ grubu.",
     icon: <FileSpreadsheet className="h-4 w-4" />,
     grad: "from-amber-400 to-orange-600",
     items: [
@@ -274,11 +274,11 @@ const SECTIONS: Section[] = [
     items: [
       {
         title: "Otomatik açılış ve otomatik yedek (Windows)",
-        what: "Kurulum sihirbazında iki seçenek: ‘Windows açılışında otomatik başlat’ ve ‘Her gün 19:00 otomatik SQL yedek’. Kaldırmak için: Personel26-Yonet.ps1 -Action AutoStart Off / AutoBackup Off.",
+        what: "Kurulum sihirbazında iki seçenek: ‘Windows açılışında otomatik başlat’ ve ‘Her gün 19:00 otomatik SQL yedek’. Kaldırmak için: SecurityPoint-Yonet.ps1 -Action AutoStart Off / AutoBackup Off.",
       },
       {
         title: "Kiosk modu (kapı ekranı)",
-        what: "Personel26 Kiosk kısayolu Edge kiosk (adres çubuksuz) modunda kapı terminalini açar; çıkış için ESC. Adresle: /terminal?kiosk=1.",
+        what: "SecurityPoint Kiosk kısayolu Edge kiosk (adres çubuksuz) modunda kapı terminalini açar; çıkış için ESC. Adresle: /terminal?kiosk=1.",
       },
       {
         title: "E-posta (ücretsiz)",

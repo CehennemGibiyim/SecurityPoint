@@ -1,6 +1,6 @@
-# Personel26 — Ayarlar ve toplu aktarım
+# SecurityPoint — Ayarlar ve toplu aktarım
 
-Kaynak: https://github.com/CehennemGibiyim/Personel26 — klonlanan HEAD `9a77dee3e5ef5ccf6bf47f393c94ca579d1bb847`. Kaynak uygulamanın personel, puantaj, nöbet, izin, duyuru, analiz, şablon, değişim, yedek ve personel sorgu ekranları korunarak mevcut proje köküne aktarıldı. Ortam bağlantısı korunur; kullanıcı sırları kaynak depodan alınmaz.
+Kaynak: https://github.com/CehennemGibiyim/SecurityPoint — klonlanan HEAD `9a77dee3e5ef5ccf6bf47f393c94ca579d1bb847`. Kaynak uygulamanın personel, puantaj, nöbet, izin, duyuru, analiz, şablon, değişim, yedek ve personel sorgu ekranları korunarak mevcut proje köküne aktarıldı. Ortam bağlantısı korunur; kullanıcı sırları kaynak depodan alınmaz.
 
 ## Eklenenler
 

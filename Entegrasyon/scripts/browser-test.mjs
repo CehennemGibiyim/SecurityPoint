@@ -23,7 +23,7 @@ const spinner = await page.evaluate(() => document.body.innerText.includes('PUAN
 console.log('   Spinner görünüyor mu:', spinner);
 
 // İçerik render edildi mi?
-const hasContent = await page.evaluate(() => document.body.innerText.includes('Personel26') && document.body.innerText.includes('Nöbet Çizelgesi'));
+const hasContent = await page.evaluate(() => document.body.innerText.includes('SecurityPoint') && document.body.innerText.includes('Nöbet Çizelgesi'));
 console.log('   İçerik render edildi:', hasContent);
 
 // React hidrasyonu tamam mı? — bir nav butonuna tıkla ve sayfanın değiştiğini doğrula

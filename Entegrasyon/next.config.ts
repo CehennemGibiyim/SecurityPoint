@@ -20,6 +20,9 @@ const nextConfig: NextConfig = staticPages
   ? {
       output: "export",
       distDir: ".next-pages",
+      // Yalnızca tsx: "ts" eklenirse app/api/**/route.ts dosyaları sayfa gibi
+      // derlenir ve statik dışa aktarım kırılır. PWA manifesti bu modda
+      // scripts/pages-build.mjs tarafından basePath'e göre üretilir.
       pageExtensions: ["tsx"],
       basePath: basePath || undefined,
       trailingSlash: true,

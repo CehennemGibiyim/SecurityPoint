@@ -1,15 +1,18 @@
 {
-  "name": "personel26",
-  "version": "1.2.0",
+  "name": "securitypoint",
+  "version": "1.3.0",
   "private": true,
-  "description": "ORION FaceGate x Puantaj26 - biyometrik kapi gecisi, puantaj, nobet ve bordro platformu",
+  "description": "SecurityPoint - ORION FaceGate x Puantaj26: biyometrik kapi gecisi, puantaj, nobet ve bordro platformu",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pages:build": "node scripts/pages-build.mjs",
+    "pages:serve": "node scripts/pages-serve.mjs",
+    "ikon": "python3 scripts/ikon-uret.py"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.11",

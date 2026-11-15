@@ -1,4 +1,4 @@
-# Personel26 — Web'de Yayınlama
+# SecurityPoint — Web'de Yayınlama
 
 İki yol var; ihtiyaca göre biri ya da ikisi birlikte kullanılabilir.
 
@@ -91,7 +91,7 @@ npx drizzle-kit push
 
 ### 3. Vercel'e bağlayın
 1. https://vercel.com → GitHub ile giriş → **Add New → Project**
-2. Personel26 deposunu seçin → **Import**
+2. SecurityPoint deposunu seçin → **Import**
 3. **Environment Variables** bölümüne ekleyin:
    - `DATABASE_URL` = Neon bağlantı adresiniz
 4. **Deploy**

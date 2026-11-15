@@ -1,4 +1,4 @@
--- Personel26 2026.01 — tekrar çalıştırılabilir, veri silmez.
+-- SecurityPoint 2026.01 — tekrar çalıştırılabilir, veri silmez.
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.app_settings (

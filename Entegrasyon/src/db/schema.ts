@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ─────────────────────────────────────────────────────────────
-// 1. Personel26 — Resmi PostgreSQL Şeması (100% Orijinal Tablolar)
+// 1. SecurityPoint — Resmi PostgreSQL Şeması (100% Orijinal Tablolar)
 // ─────────────────────────────────────────────────────────────
 
 export const departments = pgTable("departments", {

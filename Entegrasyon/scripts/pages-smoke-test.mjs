@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════════
- * Personel26 — GitHub Pages sürümü duman testi (tarayıcısız)
+ * SecurityPoint — GitHub Pages sürümü duman testi (tarayıcısız)
  * ════════════════════════════════════════════════════════════════
  *
  * Panelin sunucusuz (GitHub Pages) arka ucunu Node.js üzerinde çalıştırır:
@@ -431,7 +431,7 @@ const info = await globalThis.__p26.info();
 check("Veritabanı özeti alındı", info.mode === "browser-pglite" && Number(info.personnel) >= 20, JSON.stringify(info).slice(0, 200));
 
 // ───────────────────────────────────────────────
-// 4) Eski (Personel26) şemasıyla açılış onarımı — REGRESYON
+// 4) Eski (SecurityPoint) şemasıyla açılış onarımı — REGRESYON
 //
 // Kullanıcının tarayıcısındaki hâl: eski sürümün kısmi şemasında
 // `activity_logs` var, `employees` gibi tablolar yok. Eski `createSchema`
@@ -443,7 +443,7 @@ const { createSchema, schemaExists, schemaStatements } = bridgeModule;
 check("Köprü şema işlevleri dışa aktarıldı", typeof createSchema === "function" && typeof schemaExists === "function");
 
 const { PGlite } = await import("@electric-sql/pglite");
-// Eski Personel26 şemasından alt küme: activity_logs KURULU, employees YOK.
+// Eski SecurityPoint şemasından alt küme: activity_logs KURULU, employees YOK.
 const legacyTables = new Set(["activity_logs", "app_settings", "departments", "personnel", "schema_versions", "timesheet_entries"]);
 const legacyPg = new PGlite();
 await legacyPg.waitReady;

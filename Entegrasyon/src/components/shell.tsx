@@ -43,9 +43,9 @@ type NavEntry = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
-  /** Menüye ait kendine özel gradyan renk (Personel26 panelindeki renkli ikonlar gibi). */
+  /** Menüye ait kendine özel gradyan renk (SecurityPoint panelindeki renkli ikonlar gibi). */
   grad: string;
-  /** Personel26 içindeki alt grup (eski paneldeki ÇALIŞMA ALANI / YÖNETİM / AYARLAR). */
+  /** SecurityPoint içindeki alt grup (eski paneldeki ÇALIŞMA ALANI / YÖNETİM / AYARLAR). */
   group?: string;
 }
 
@@ -54,7 +54,7 @@ const HELP_NAV: NavEntry[] = [
   { href: "/yardim", label: "Kullanım Kılavuzu", icon: BookOpenText, grad: "from-slate-400 to-slate-600", exact: true },
 ];
 
-/** Renkli, yuvarlatılmış simge kutusu (Personel26 panelindeki gibi gradyanlı zemin üzerinde beyaz simge). */
+/** Renkli, yuvarlatılmış simge kutusu (SecurityPoint panelindeki gibi gradyanlı zemin üzerinde beyaz simge). */
 function NavIcon({ grad, active = true, children }: { grad: string; active?: boolean; children: React.ReactNode }) {
   return (
     <span
@@ -88,7 +88,7 @@ const FACE_NAV: NavEntry[] = [
   { href: "/ayarlar", label: "Sistem & KVKK", icon: Settings, grad: "from-slate-500 to-slate-700" },
 ];
 
-// Eski Personel26 paneliyle birebir aynı sıra ve gruplar:
+// Eski SecurityPoint paneliyle birebir aynı sıra ve gruplar:
 // ÇALIŞMA ALANI (Nöbet → Puantaj → Bordro → Şablon → Personel → İzin → Değişim)
 // → YÖNETİM (Adalet, Uyarılar, Duyurular, Yedekleme) → AYARLAR.
 const PUANTAJ26_NAV: NavEntry[] = [
@@ -107,7 +107,7 @@ const PUANTAJ26_NAV: NavEntry[] = [
   { href: "/puantaj26/ayarlar", label: "Kurum & Sistem Ayarları", icon: Settings2, group: "Ayarlar", grad: "from-slate-500 to-slate-700" },
 ];
 
-/** Personel26 alt grup başlığı — eski paneldeki gibi madde listesini böler. */
+/** SecurityPoint alt grup başlığı — eski paneldeki gibi madde listesini böler. */
 function P26SubGroupHeader({ label }: { label: string }) {
   return (
     <li
@@ -122,7 +122,7 @@ function P26SubGroupHeader({ label }: { label: string }) {
 const ALL_NAV = [...FACE_NAV, ...PUANTAJ26_NAV, ...HELP_NAV];
 
 /**
- * Sol menüdeki iki ana bölümün (Kapı Geçiş Sistemi / Personel26) açık-kapalı hali.
+ * Sol menüdeki iki ana bölümün (Kapı Geçiş Sistemi / SecurityPoint) açık-kapalı hali.
  * Tercih localStorage'da saklanır; ilk açılışta her ikisi de açıktır.
  */
 const NAV_COLLAPSE_KEY = "orion-nav-collapsed";
@@ -337,7 +337,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             })}
 
             <NavGroupHeader
-              label="Personel26"
+              label="Puantaj26"
               accent="amber"
               collapsed={collapsed.p26}
               onToggle={() => toggleCollapsed("p26")}

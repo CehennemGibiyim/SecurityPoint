@@ -1,5 +1,5 @@
 /**
- * Personel26 — statik arayüz önizlemesi üretici.
+ * SecurityPoint — statik arayüz önizlemesi üretici.
  * Nöbet Çizelgesi ekranının görsel kopyasını tek dosyalık, bağımsız
  * (harici CSS/JS/font gerektirmeyen) bir HTML olarak public/ altına yazar.
  *
@@ -129,7 +129,7 @@ const sidebar = `
 <aside class="sidebar">
   <div class="brand">
     <div class="brand-logo">${ic("i-logo", 20)}</div>
-    <div><div class="brand-name">Personel26</div><div class="brand-sub">Puantaj &amp; Nöbet Yönetimi</div></div>
+    <div><div class="brand-name">SecurityPoint</div><div class="brand-sub">Puantaj &amp; Nöbet Yönetimi</div></div>
   </div>
   <nav class="nav">
     ${NAV.map(([icon, label, desc, active]) => `
@@ -181,9 +181,9 @@ const html = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Personel26 — Nöbet Çizelgesi (Arayüz Önizleme)</title>
+<title>SecurityPoint — Nöbet Çizelgesi (Arayüz Önizleme)</title>
 <!--
-  Personel26 · Nöbet Çizelgesi ekranının STATİK görsel önizlemesi.
+  SecurityPoint · Nöbet Çizelgesi ekranının STATİK görsel önizlemesi.
   Tek dosya, bağımsız (harici CSS/JS/font yok). Veriler temsilîdir, işlem yapılamaz.
   Üretim: node scripts/build-uipreview.mjs
 -->
@@ -412,7 +412,7 @@ ${sidebar}
         <tbody>${summaryRows}</tbody>
       </table></div>
     </div>
-    <div class="foot-note">Personel26 · Nöbet Çizelgesi arayüz önizlemesi · Bu dosya yalnızca görsel paylaşım amaçlıdır, veriler temsilîdir.</div>
+    <div class="foot-note">SecurityPoint · Nöbet Çizelgesi arayüz önizlemesi · Bu dosya yalnızca görsel paylaşım amaçlıdır, veriler temsilîdir.</div>
   </div>
 </div>
 </div>

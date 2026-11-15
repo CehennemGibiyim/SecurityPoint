@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const format = new URL(request.url).searchParams.get("format");
-    const content = format === "schema" ? `-- Personel26 ${SCHEMA_VERSION}, veri silmeyen şema güncellemesi\nBEGIN;\n${SCHEMA_UPDATE_SQL}\nCOMMIT;\n` : await exportSql();
+    const content = format === "schema" ? `-- SecurityPoint ${SCHEMA_VERSION}, veri silmeyen şema güncellemesi\nBEGIN;\n${SCHEMA_UPDATE_SQL}\nCOMMIT;\n` : await exportSql();
     return new Response(content, { headers: { "Content-Type": "application/sql; charset=utf-8", "Content-Disposition": `attachment; filename="personel26_${format === "schema" ? "schema_update" : "backup"}.sql"` } });
   } catch { return Response.json({ error: "SQL oluşturulamadı." }, { status: 500 }); }
 }

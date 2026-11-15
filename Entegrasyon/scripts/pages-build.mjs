@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════════
- * Personel26 — GitHub Pages (statik + tarayıcı içi veritabanı) derlemesi
+ * SecurityPoint — GitHub Pages (statik + tarayıcı içi veritabanı) derlemesi
  * ════════════════════════════════════════════════════════════════
  *
  * Ne yapar?
@@ -13,7 +13,7 @@
  *
  * Kullanım:
  *   npm run pages:build                 → site kökü ("/") için derler
- *   P26_BASE_PATH=/Personel26 npm run pages:build
+ *   P26_BASE_PATH=/SecurityPoint npm run pages:build
  *
  * Not: GitHub Actions ortamında alt dizin otomatik bulunur
  * (GITHUB_REPOSITORY → /repo-adı).
@@ -152,6 +152,57 @@ await writeFile(
     null,
     2,
   ),
+);
+
+// ───────────────────────────────────────────────
+// 6) PWA — manifest + <link rel="manifest">
+// ───────────────────────────────────────────────
+// `output: export` + pageExtensions=["tsx"] olduğu için app/manifest.ts metadata
+// rotası statik modda üretilmez; manifest burada basePath'e göre yazılır.
+const pwaManifest = {
+  id: `${basePath}/`,
+  name: "SecurityPoint — ORION FaceGate × Puantaj26",
+  short_name: "SecurityPoint",
+  description: "Biyometrik kapı geçişi, puantaj, nöbet, bordro ve izin yönetimi. Kurum içi kullanım.",
+  lang: "tr",
+  dir: "ltr",
+  start_url: `${basePath}/`,
+  scope: `${basePath}/`,
+  display: "standalone",
+  orientation: "any",
+  background_color: "#06080f",
+  theme_color: "#06080f",
+  categories: ["business", "productivity"],
+  icons: [
+    { src: `${basePath}/brand/pwa-192.png`, sizes: "192x192", type: "image/png", purpose: "any" },
+    { src: `${basePath}/brand/pwa-512.png`, sizes: "512x512", type: "image/png", purpose: "any" },
+    { src: `${basePath}/brand/pwa-maskable-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
+  ],
+};
+await writeFile(path.join(siteDir, "manifest.webmanifest"), JSON.stringify(pwaManifest), "utf8");
+
+async function* walkHtml(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) yield* walkHtml(full);
+    else if (entry.name.endsWith(".html")) yield full;
+  }
+}
+const manifestLink = `<link rel="manifest" href="${basePath}/manifest.webmanifest"/>`;
+let patchedHtml = 0;
+for await (const file of walkHtml(siteDir)) {
+  let html = await readFile(file, "utf8");
+  if (html.includes('rel="manifest"') || !html.includes("</head>")) continue;
+  html = html.replace("</head>", `${manifestLink}</head>`);
+  await writeFile(file, html);
+  patchedHtml += 1;
+}
+
+const swExists = existsSync(path.join(siteDir, "sw.js"));
+const offlineExists = existsSync(path.join(siteDir, "offline.html"));
+log(
+  `PWA          : manifest.webmanifest + ${patchedHtml} HTML bağlantısı` +
+    (swExists && offlineExists ? "" : "  ⚠ sw.js/offline.html eksik (public/ kontrol edin)"),
 );
 
 const assetBytes = (await Promise.all(

@@ -1,6 +1,6 @@
 export type Theme = { id: string; name: string; category: "dark" | "light"; bg: string; panel: string; sidebar: string; accent: string; text: string; muted: string; custom?: boolean };
 export const THEMES: Theme[] = [
-  { id: "original", name: "Personel26", category: "dark", bg: "#070b14", panel: "#0e1626", sidebar: "#090e1b", accent: "#38bdf8", text: "#e2e8f0", muted: "#8b98ad" },
+  { id: "original", name: "SecurityPoint", category: "dark", bg: "#070b14", panel: "#0e1626", sidebar: "#090e1b", accent: "#38bdf8", text: "#e2e8f0", muted: "#8b98ad" },
   // ───────── ORION FaceGate konsol arka planına uygun temalar ─────────
   { id: "orion", name: "ORION", category: "dark", bg: "#06080f", panel: "#101725", sidebar: "#080d18", accent: "#e8c36a", text: "#e7edf8", muted: "#93a3b8" },
   { id: "orion-neon", name: "ORION Neon", category: "dark", bg: "#050a12", panel: "#0b1622", sidebar: "#071019", accent: "#2ee9d0", text: "#e6faf6", muted: "#86b5ae" },

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
   [switch]$SkipBuild,     # Mevcut .next/standalone çıktısını kullan (CI'da build ayrı adımda yapılır)
-  [switch]$NoZip,         # Personel26-Portable.zip üretme
+  [switch]$NoZip,         # SecurityPoint-Portable.zip üretme
   [switch]$NoExe,         # Kurulum .exe'sini derleme (yalnızca taşınabilir paket)
   [string]$NodeVersion = '22.22.3',
   [string]$PgVersion = '16.13-1',
@@ -14,9 +14,9 @@ param(
   Bu betik tek başına tüm süreci yürütür:
     1) TypeScript + üretim derlemesi (isterseniz -SkipBuild ile atlanır)
     2) Taşınabilir çalışma ortamı: Node.js 22 + PostgreSQL 16 + Visual C++ Redistributable
-    3) Personel26-Portable\ klasörü + Personel26-Portable.zip
+    3) SecurityPoint-Portable\ klasörü + SecurityPoint-Portable.zip
     4) installer.iss dosyasını üretir (artık ayrı dosya taşınmaz)
-    5) Inno Setup 6 yoksa sessizce kurar, Personel26-Kurulum.exe'yi derler
+    5) Inno Setup 6 yoksa sessizce kurar, SecurityPoint-Kurulum.exe'yi derler
 
   Kullanım (Entegrasyon/ altında):
     powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1
@@ -54,7 +54,7 @@ function Get-WebWithRetry {
 # 1) Derleme (isteğe bağlı)
 # ─────────────────────────────────────────────────────────────────
 $Root = Split-Path -Parent $PSScriptRoot        # Entegrasyon\
-$Out = Join-Path $Root 'Personel26-Portable'
+$Out = Join-Path $Root 'SecurityPoint-Portable'
 $Cache = Join-Path $Root '.paket-cache'
 New-Item -ItemType Directory -Force -Path $Cache | Out-Null
 
@@ -69,8 +69,8 @@ if ($Version -notmatch '^\d+\.\d+\.\d+([.-][0-9A-Za-z.]+)?$') { throw "Gecersiz 
 # Inno Setup VersionInfoVersion dort sayisal alan ister (1.2.0 -> 1.2.0.0).
 $VersionQuad = (($Version -split '[.-]')[0..2] -join '.') + '.0'
 if ($Version -match '^\d+\.\d+\.\d+\.\d+') { $VersionQuad = ($Version -split '[.-]')[0..3] -join '.' }
-$IconFile = Join-Path $Root 'public\brand\personel26.ico'
-if (-not (Test-Path $IconFile)) { throw 'Uygulama ikonu bulunamadi: public\brand\personel26.ico (uretmek icin: python3 scripts/ikon-uret.py).' }
+$IconFile = Join-Path $Root 'public\brand\securitypoint.ico'
+if (-not (Test-Path $IconFile)) { throw 'Uygulama ikonu bulunamadi: public\brand\securitypoint.ico (uretmek icin: python3 scripts/ikon-uret.py).' }
 Write-Host "Surum: $Version ($VersionQuad)" -ForegroundColor Cyan
 
 if (-not $SkipBuild) {
@@ -136,7 +136,13 @@ New-Item -ItemType Directory -Force -Path "$Out\app", "$Out\node" | Out-Null
 Copy-Item "$Root\.next\standalone\*" "$Out\app\" -Recurse -Force
 New-Item -ItemType Directory -Force -Path "$Out\app\.next\static" | Out-Null
 Copy-Item "$Root\.next\static\*" "$Out\app\.next\static\" -Recurse -Force
-if (Test-Path "$Root\public") { Copy-Item "$Root\public" "$Out\app\public" -Recurse -Force }
+# DIKKAT: .next/standalone/public zaten var olabilir (izlenen dosyalar). Klasoru
+# oldugu gibi kopyalamak public/public ic ice yapisi uretir ve yuz modelleri,
+# sahneler, vendor dosyalari paketten eksik kalir. Bu yuzden ICERIK birlestirilir.
+if (Test-Path "$Root\public") {
+  New-Item -ItemType Directory -Force -Path "$Out\app\public" | Out-Null
+  Copy-Item "$Root\public\*" "$Out\app\public\" -Recurse -Force
+}
 # Gelistirme ortamina ait baglanti bilgileri pakete ALINMAZ.
 Get-ChildItem "$Out\app" -Filter '.env*' -Force -ErrorAction SilentlyContinue | Remove-Item -Force
 $NodeTmp = Join-Path $Cache 'node-extract'
@@ -147,16 +153,16 @@ Copy-Item (Get-ChildItem "$NodeTmp\*\node.exe").FullName "$Out\node\node.exe"
 Expand-Archive $PgZip -DestinationPath $PgTmp
 New-Item -ItemType Directory -Force -Path "$Out\pgsql" | Out-Null
 foreach ($dir in @('bin','lib','share')) { Copy-Item "$PgTmp\pgsql\$dir" "$Out\pgsql\$dir" -Recurse -Force }
-foreach ($file in @('Personel26-Baslat.bat','Personel26-Baslat.vbs','Personel26-Durdur.bat','Personel26-Yedekle.bat','Personel26-Kiosk.bat','Personel26-Yonet.ps1','schema.sql','schema-update.sql')) { Copy-Item (Join-Path $PSScriptRoot $file) $Out -Force }
+foreach ($file in @('SecurityPoint-Baslat.bat','SecurityPoint-Baslat.vbs','SecurityPoint-Durdur.bat','SecurityPoint-Yedekle.bat','SecurityPoint-Kiosk.bat','SecurityPoint-Yonet.ps1','schema.sql','schema-update.sql')) { Copy-Item (Join-Path $PSScriptRoot $file) $Out -Force }
 Copy-Item (Join-Path $PSScriptRoot 'README-WINDOWS.md') (Join-Path $Out 'BENIOKU.md')
 # Uygulama ikonu: kurulum .exe'si, kisayollar ve tarayici sekmesi ayni dosyayi kullanir.
-Copy-Item $IconFile (Join-Path $Out 'personel26.ico') -Force
+Copy-Item $IconFile (Join-Path $Out 'securitypoint.ico') -Force
 # Temiz Windows'ta Visual C++ yoksa kurulabilsin diye pakete dahil edilir.
 Copy-Item $VcFile (Join-Path $Out 'vc_redist.x64.exe') -Force
-@{ application=$Version; versionQuad=$VersionQuad; product='Personel26 — ORION FaceGate x Puantaj26'; icon='personel26.ico'; schema='2026.01'; node=$NodeVersion; postgresql=$PgVersion; nodeSha256=(Get-FileHash $NodeZip).Hash; postgresqlSha256=(Get-FileHash $PgZip).Hash; vcRedistSha256=(Get-FileHash $VcFile).Hash } | ConvertTo-Json | Set-Content (Join-Path $Out 'manifest.json') -Encoding UTF8
+@{ application=$Version; versionQuad=$VersionQuad; product='SecurityPoint — ORION FaceGate x Puantaj26'; icon='securitypoint.ico'; schema='2026.01'; node=$NodeVersion; postgresql=$PgVersion; nodeSha256=(Get-FileHash $NodeZip).Hash; postgresqlSha256=(Get-FileHash $PgZip).Hash; vcRedistSha256=(Get-FileHash $VcFile).Hash } | ConvertTo-Json | Set-Content (Join-Path $Out 'manifest.json') -Encoding UTF8
 
 if (-not $NoZip) {
-  $Zip = Join-Path $Root 'Personel26-Portable.zip'
+  $Zip = Join-Path $Root 'SecurityPoint-Portable.zip'
   if (Test-Path $Zip) { Remove-Item $Zip -Force }
   Compress-Archive -Path "$Out\*" -DestinationPath $Zip
 }
@@ -201,7 +207,7 @@ if (-not $NoExe) {
 
   # installer.iss — betigin icinde uretilir; harici dosya tasiinaz.
   $IssTemplate = @'
-#define AppName "Personel26"
+#define AppName "SecurityPoint"
 #define AppVersion "@@APPVERSION@@"
 #define AppVersionQuad "@@APPVERSIONQUAD@@"
 #define PortableDir "@@PORTABLEDIR@@"
@@ -210,10 +216,10 @@ AppId={{7E1B2A64-9C3D-4B8F-A2E5-P26PUANTAJ01}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=Personel26
-AppCopyright=Personel26
+AppPublisher=SecurityPoint
+AppCopyright=SecurityPoint
 VersionInfoVersion={#AppVersionQuad}
-VersionInfoCompany=Personel26
+VersionInfoCompany=SecurityPoint
 VersionInfoDescription={#AppName} — Biyometrik Kapı Geçişi ve Puantaj Platformu
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
@@ -221,7 +227,7 @@ SetupIconFile="@@ICONFILE@@"
 DefaultDirName={localappdata}\Programs\{#AppName}
 DefaultGroupName={#AppName}
 OutputDir=@@OUTPUTDIR@@
-OutputBaseFilename=Personel26-Kurulum
+OutputBaseFilename=SecurityPoint-Kurulum
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
@@ -232,7 +238,7 @@ WizardStyle=modern
 SetupLogging=yes
 UsePreviousAppDir=yes
 UninstallDisplayName={#AppName} {#AppVersion} — Puantaj ve Nöbet Yönetimi
-UninstallDisplayIcon={app}\personel26.ico
+UninstallDisplayIcon={app}\securitypoint.ico
 UninstallFilesDir={app}\uninstall
 CloseApplications=no
 [Languages]
@@ -240,25 +246,25 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 [Files]
 Source: "{#PortableDir}\*"; DestDir: "{app}"; Excludes: "data\*"; Flags: recursesubdirs createallsubdirs ignoreversion
 [Icons]
-Name: "{group}\{#AppName} Başlat"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\Personel26-Yonet.ps1"" -Action Start"; WorkingDir: "{app}"; IconFilename: "{app}\personel26.ico"; IconIndex: 0
-Name: "{group}\{#AppName} Durdur"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\Personel26-Yonet.ps1"" -Action Stop"; WorkingDir: "{app}"; IconFilename: "{app}\personel26.ico"; IconIndex: 0
-Name: "{group}\{#AppName} Yedekle"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\Personel26-Yonet.ps1"" -Action Backup"; WorkingDir: "{app}"; IconFilename: "{app}\personel26.ico"; IconIndex: 0
-Name: "{group}\{#AppName} Kapı Kiosk (tam ekran)"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\Personel26-Yonet.ps1"" -Action Kiosk"; WorkingDir: "{app}"; IconFilename: "{app}\personel26.ico"; IconIndex: 0
-Name: "{group}\{#AppName} Kaldır"; Filename: "{uninstallexe}"; IconFilename: "{app}\personel26.ico"; IconIndex: 0
-Name: "{autodesktop}\{#AppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\Personel26-Yonet.ps1"" -Action Start"; WorkingDir: "{app}"; IconFilename: "{app}\personel26.ico"; IconIndex: 0; Tasks: desktopicon
+Name: "{group}\{#AppName} Başlat"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\SecurityPoint-Yonet.ps1"" -Action Start"; WorkingDir: "{app}"; IconFilename: "{app}\securitypoint.ico"; IconIndex: 0
+Name: "{group}\{#AppName} Durdur"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\SecurityPoint-Yonet.ps1"" -Action Stop"; WorkingDir: "{app}"; IconFilename: "{app}\securitypoint.ico"; IconIndex: 0
+Name: "{group}\{#AppName} Yedekle"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\SecurityPoint-Yonet.ps1"" -Action Backup"; WorkingDir: "{app}"; IconFilename: "{app}\securitypoint.ico"; IconIndex: 0
+Name: "{group}\{#AppName} Kapı Kiosk (tam ekran)"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\SecurityPoint-Yonet.ps1"" -Action Kiosk"; WorkingDir: "{app}"; IconFilename: "{app}\securitypoint.ico"; IconIndex: 0
+Name: "{group}\{#AppName} Tanılama (sorun giderme)"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -NoExit -File ""{app}\SecurityPoint-Yonet.ps1"" -Action Doctor"; WorkingDir: "{app}"; IconFilename: "{app}\securitypoint.ico"; IconIndex: 0
+Name: "{group}\{#AppName} Kaldır"; Filename: "{uninstallexe}"; IconFilename: "{app}\securitypoint.ico"; IconIndex: 0
+Name: "{autodesktop}\{#AppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\SecurityPoint-Yonet.ps1"" -Action Start"; WorkingDir: "{app}"; IconFilename: "{app}\securitypoint.ico"; IconIndex: 0; Tasks: desktopicon
 [Tasks]
 Name: "desktopicon"; Description: "Masaüstü kısayolu oluştur"; GroupDescription: "Kısayollar:"
-Name: "otomatikbaslat"; Description: "Windows açılışında Personel26 otomatik başlatılsın"; GroupDescription: "Otomatik:"; Flags: checkedonce
+Name: "otomatikbaslat"; Description: "Windows açılışında SecurityPoint otomatik başlatılsın"; GroupDescription: "Otomatik:"; Flags: checkedonce
 Name: "gunlukyedek"; Description: "Her gün 19:00'da otomatik SQL yedek alınsın"; GroupDescription: "Otomatik:"; Flags: checkedonce
 [Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoStart"; Flags: runhidden; Tasks: otomatikbaslat
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoBackup"; Flags: runhidden; Tasks: gunlukyedek
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\SecurityPoint-Yonet.ps1"" -Action AutoStart"; Flags: runhidden; Tasks: otomatikbaslat
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\SecurityPoint-Yonet.ps1"" -Action AutoBackup"; Flags: runhidden; Tasks: gunlukyedek
 Filename: "{app}\vc_redist.x64.exe"; Description: "Gerekirse Microsoft Visual C++ çalışma zamanını kur"; Parameters: "/install /passive /norestart"; Flags: postinstall shellexec skipifsilent; Check: not VCInstalled
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\Personel26-Yonet.ps1"" -Action Start"; Description: "{#AppName} şimdi başlatılsın"; Flags: postinstall nowait skipifsilent runhidden
 [UninstallRun]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action Stop"; Flags: runhidden; RunOnceId: "StopP26"
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoStartOff"; Flags: runhidden; RunOnceId: "AutoStartOff"
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Personel26-Yonet.ps1"" -Action AutoBackupOff"; Flags: runhidden; RunOnceId: "AutoBackupOff"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\SecurityPoint-Yonet.ps1"" -Action Stop"; Flags: runhidden; RunOnceId: "StopP26"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\SecurityPoint-Yonet.ps1"" -Action AutoStartOff"; Flags: runhidden; RunOnceId: "AutoStartOff"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\SecurityPoint-Yonet.ps1"" -Action AutoBackupOff"; Flags: runhidden; RunOnceId: "AutoBackupOff"
 [Code]
 function VCInstalled: Boolean;
 begin
@@ -269,13 +275,45 @@ var
   ResultCode: Integer;
 begin
   Result := '';
-  if FileExists(ExpandConstant('{app}\Personel26-Durdur.bat')) then
+  if FileExists(ExpandConstant('{app}\SecurityPoint-Durdur.bat')) then
   begin
-    if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\Personel26-Yonet.ps1') + '" -Action Stop', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-      Result := 'Güncelleme öncesinde Personel26 kapatılamadı.'
+    if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\SecurityPoint-Yonet.ps1') + '" -Action Stop', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      Result := 'Güncelleme öncesinde SecurityPoint kapatılamadı.'
     else if ResultCode <> 0 then
-      Result := 'Personel26 kapatma işlemi başarısız. Uygulamayı kapatıp tekrar deneyin.';
+      Result := 'SecurityPoint kapatma işlemi başarısız. Uygulamayı kapatıp tekrar deneyin.';
   end;
+end;
+// Uygulama sessiz kurulumda baslatilmaz (CI / toplu dagitim).
+// Normal kurulumda baslatilir ve hata olursa SESSIZ KALMAZ: kullaniciya
+// gunluk/tanilama dosya yollariyla birlikte ileti kutusu gosterilir.
+procedure StartAppAfterInstall;
+var
+  ResultCode: Integer;
+  Ps: String;
+begin
+  Ps := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+  if not VCInstalled then
+    if FileExists(ExpandConstant('{app}\vc_redist.x64.exe')) then
+      Exec(ExpandConstant('{app}\vc_redist.x64.exe'), '/install /passive /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  if not Exec(Ps, '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + ExpandConstant('{app}\SecurityPoint-Yonet.ps1') + '" -Action Start', ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    MsgBox('SecurityPoint başlatılamadı.' + #13#10 + #13#10 +
+           'Kurulum tamamlandı; Başlat menüsündeki “SecurityPoint Başlat” kısayoluyla yeniden deneyin.', mbError, MB_OK);
+    Exit;
+  end;
+  if ResultCode <> 0 then
+    MsgBox('SecurityPoint başlatılamadı (kod ' + IntToStr(ResultCode) + ').' + #13#10 + #13#10 +
+           'Ayrıntılar:' + #13#10 +
+           ExpandConstant('{app}') + '\data\baslatma-hatasi.txt' + #13#10 +
+           ExpandConstant('{app}') + '\data\app-error.log' + #13#10 + #13#10 +
+           'Tanılama raporu: Başlat menüsü → SecurityPoint Tanılama.', mbError, MB_OK);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep = ssPostInstall) and not WizardSilent then
+    StartAppAfterInstall;
 end;
 // Veritabanı sonradan data/ içinde oluşur ve Inno Setup tarafından kaydedilmez.
 // Kaldırma veya güncelleme sırasında data/ asla silinmez.
@@ -286,7 +324,7 @@ end;
   # bu yuzden .iss her zaman BOM'lu UTF-8 olarak yazilir.
   [IO.File]::WriteAllText($IssPath, $IssContent, [Text.UTF8Encoding]::new($true))
 
-  $ExePath = Join-Path $PSScriptRoot 'Personel26-Kurulum.exe'
+  $ExePath = Join-Path $PSScriptRoot 'SecurityPoint-Kurulum.exe'
   if (Test-Path $ExePath) { Remove-Item $ExePath -Force }
   & $ISCC $IssPath
   if ($LASTEXITCODE -ne 0) { throw "Inno Setup derlemesi basarisiz (kod $LASTEXITCODE)." }
@@ -299,7 +337,7 @@ end;
 # ─────────────────────────────────────────────────────────────────
 Write-Host ''
 Write-Host '================ TAMAMLANDI ================' -ForegroundColor Green
-Write-Host "  Taşinabilir klasör : $Out\Personel26-Baslat.bat"
-if (-not $NoZip) { Write-Host "  Taşinabilir ZIP    : $(Join-Path $Root 'Personel26-Portable.zip')" }
-if (-not $NoExe) { Write-Host "  Windows Kurulum EXE: $(Join-Path $PSScriptRoot 'Personel26-Kurulum.exe')" }
+Write-Host "  Taşinabilir klasör : $Out\SecurityPoint-Baslat.bat"
+if (-not $NoZip) { Write-Host "  Taşinabilir ZIP    : $(Join-Path $Root 'SecurityPoint-Portable.zip')" }
+if (-not $NoExe) { Write-Host "  Windows Kurulum EXE: $(Join-Path $PSScriptRoot 'SecurityPoint-Kurulum.exe')" }
 Write-Host '============================================'

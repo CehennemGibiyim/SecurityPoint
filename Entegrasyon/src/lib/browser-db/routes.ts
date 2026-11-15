@@ -10,7 +10,7 @@ export type ApiRoute = {
 };
 
 export const API_ROUTES: ApiRoute[] = [
-  // ── Personel26 / Puantaj26 Resmi Uçları ──
+  // ── SecurityPoint / Puantaj26 Resmi Uçları ──
   { path: "/api/announcements", load: () => import("@/app/api/announcements/route") },
   { path: "/api/backup", load: () => import("@/app/api/backup/route") },
   { path: "/api/backup/[id]", load: () => import("@/app/api/backup/[id]/route") },

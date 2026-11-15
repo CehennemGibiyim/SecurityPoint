@@ -15,7 +15,7 @@ export type AppSettings = {
   customGroups: string[];
 };
 export const DEFAULT_SETTINGS: AppSettings = {
-  institution: "Personel26 Sağlık Kurumu", shortName: "Personel26", email: "", phone: "", address: "", logo: null,
+  institution: "SecurityPoint Sağlık Kurumu", shortName: "SecurityPoint", email: "", phone: "", address: "", logo: null,
   theme: "original", themeAuto: true, customThemes: [], compact: false, reducedMotion: false, maskTc: true,
   autoBackup: true, backupRetention: 30,
   notifyImports: true, notifySystem: true, notifyBackups: true,

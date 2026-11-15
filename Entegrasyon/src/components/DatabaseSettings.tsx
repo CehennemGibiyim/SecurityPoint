@@ -28,7 +28,7 @@ export default function DatabaseSettings({ settings, setSettings, schemaVersion,
   async function readBackup(file: File) {
     setBusy(true);
     try {
-      if (!/\.json$/i.test(file.name)) throw new Error("Panelden geri yüklemek için Personel26 JSON yedeği seçin. SQL yedekleri Windows geri yükleme aracıyla açılır.");
+      if (!/\.json$/i.test(file.name)) throw new Error("Panelden geri yüklemek için SecurityPoint JSON yedeği seçin. SQL yedekleri Windows geri yükleme aracıyla açılır.");
       if (file.size > 30 * 1024 * 1024) throw new Error("Yedek en fazla 30 MB olabilir.");
       const input = JSON.parse(await file.text());
       const res = await fetch("/api/database", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "preview", data: input }) });

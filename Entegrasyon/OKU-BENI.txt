@@ -1,4 +1,4 @@
-Bu zip, ilk yuklediginiz Personel26.zip'ten bu yana degisen/eklenen TUM dosyalari icerir.
+Bu zip, ilk yuklediginiz SecurityPoint.zip'ten bu yana degisen/eklenen TUM dosyalari icerir.
 Hepsini ayni yollarla GitHub'a yukleyin (klasor yapisini koruyarak surukleyin).
 
 GITHUB'DAN SILINECEK:

@@ -6,6 +6,7 @@ import "@fontsource-variable/space-grotesk";
 import "./globals.css";
 import "./settings.css";
 import ThemeLoader from "@/components/ThemeLoader";
+import PwaRegister from "@/components/pwa-register";
 import BrowserDbGate from "@/components/BrowserDbGate";
 import AuthGate from "@/components/auth-gate";
 import { BROWSER_BOOT_INLINE } from "@/lib/browser-db/inline-boot";
@@ -29,9 +30,20 @@ const BROWSER_DB = process.env.NEXT_PUBLIC_P26_BROWSER_DB === "1";
 const BASE_PATH = (process.env.NEXT_PUBLIC_P26_BASE_PATH ?? "").replace(/\/$/, "");
 
 export const metadata: Metadata = {
-  title: "ORION FaceGate × Puantaj26 | Entegre Biyometrik PDKS & Nöbet/Puantaj Platformu",
+  title: "SecurityPoint | ORION FaceGate × Puantaj26",
   description:
-    "ORION FaceGate yüz tanımalı PDKS, kapı yetki ve biyometrik stüdyo altyapısı ile Puantaj26 resmi nöbet, puantaj, bordro ve izin yönetim sistemi.",
+    "SecurityPoint: ORION FaceGate yüz tanımalı PDKS, kapı yetki ve biyometrik stüdyo altyapısı ile Puantaj26 resmi nöbet, puantaj, bordro ve izin yönetim sistemi.",
+  applicationName: "SecurityPoint",
+  // Tek ikon kaynağı: `scripts/ikon-uret.py` → src/app/favicon.ico + src/app/apple-icon.png.
+  // Next.js bu dosyaları dosya kuralıyla otomatik ekler; `icons` elle yazılırsa
+  // aynı sekmede İKİ icon bağlantısı (çift kaynak) oluşur. Bu yüzden elle tanımlanmaz.
+  // iOS: "Ana Ekrana Ekle" sonrası tam ekran (standalone) çalışsın.
+  appleWebApp: {
+    capable: true,
+    title: "SecurityPoint",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -49,6 +61,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </>
         ) : null}
         <ThemeLoader />
+        <PwaRegister />
         {BROWSER_DB ? (
           <BrowserDbGate>
             <AuthGate>{children}</AuthGate>

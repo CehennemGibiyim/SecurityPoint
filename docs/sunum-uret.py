@@ -564,7 +564,7 @@ def build():
     y = pdf.head(
         "Menü haritası",
         "İki grup, 29 menü",
-        "Sol menüde ‘Kapı Geçiş Sistemi’ ve ‘Personel26’ olmak üzere iki ana grup; en altta tek başına ‘Yardım → Kullanım Kılavuzu’.",
+        "Sol menüde ‘Kapı Geçiş Sistemi’ ve ‘SecurityPoint’ olmak üzere iki ana grup; en altta tek başına ‘Yardım → Kullanım Kılavuzu’.",
         accent=AMBER,
         page_no=5,
         total=total,
@@ -640,8 +640,8 @@ def build():
 
     menu_page("Kapı Geçiş Sistemi · 1/2", "Canlı denetim ve biyometri", "Yüzden kapıya, kapıdan imza defterine uzanan günlük operasyon akışı.", FACE_1, 6, CYAN)
     menu_page("Kapı Geçiş Sistemi · 2/2", "Planlama, ziyaretçi ve güvenlik", "Mesai planı, izinler, ziyaretçi QR’ı ve saha güvenlik kuralları.", FACE_2, 7, ROSE)
-    menu_page("Personel26 · 1/2", "Çalışma alanı menüleri", "Nöbetten puantaja, oradan bordroya uzanan resmi İK zinciri.", P26_1, 8, AMBER)
-    menu_page("Personel26 · 2/2", "Yönetim ve sistem menüleri", "Analiz, uyarılar, duyurular, yedek ve kurum ayarları.", P26_2, 9, VIOLET)
+    menu_page("SecurityPoint · 1/2", "Çalışma alanı menüleri", "Nöbetten puantaja, oradan bordroya uzanan resmi İK zinciri.", P26_1, 8, AMBER)
+    menu_page("SecurityPoint · 2/2", "Yönetim ve sistem menüleri", "Analiz, uyarılar, duyurular, yedek ve kurum ayarları.", P26_2, 9, VIOLET)
 
     # ---------------------------------------------------------- 10 · akış
     y = pdf.head(
@@ -791,7 +791,7 @@ def build():
             "Actions → windows-test → Artifacts’ten .exe’yi indirin",
             "Kurun; Node.js + PostgreSQL pakete gömülüdür",
             "Kurulumda otomatik açılış + günlük yedek seçeneği",
-            "Kapı ekranı için Personel26 Kiosk kısayolu hazır",
+            "Kapı ekranı için SecurityPoint Kiosk kısayolu hazır",
         ]),
         ("C · Kapı terminali", GREEN, [
             "/terminal?kiosk=1 ile tam ekran kapı modu",

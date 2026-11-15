@@ -6,9 +6,9 @@ _site/
 out/
 build/
 .paket-cache/
-Personel26-Portable/
-Personel26-Portable.zip
-windows/Personel26-Kurulum.exe
+SecurityPoint-Portable/
+SecurityPoint-Portable.zip
+windows/SecurityPoint-Kurulum.exe
 .artifacts/
 .env
 .env*.local
@@ -16,3 +16,5 @@ windows/Personel26-Kurulum.exe
 *.tsbuildinfo
 .DS_Store
 Thumbs.db
+SecurityPoint-Portable-linux-x64.tar.gz
+SecurityPoint-Portable-linux-x64.tar.gz.sha256

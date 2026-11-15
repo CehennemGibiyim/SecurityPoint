@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=SecurityPoint
+Name[tr]=SecurityPoint
+GenericName=PDKS & Puantaj
+Comment=ORION FaceGate × Puantaj26 — biyometrik kapı geçişi, puantaj ve nöbet yönetimi
+Comment[tr]=Biyometrik kapı geçişi, puantaj ve nöbet yönetimi
+Exec=sh -c '"$(dirname "$1")/SecurityPoint-Baslat.sh"' sh %k
+Icon=securitypoint
+Terminal=false
+Categories=Office;Database;
+StartupNotify=true

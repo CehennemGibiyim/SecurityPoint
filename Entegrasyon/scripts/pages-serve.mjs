@@ -108,5 +108,5 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`Personel26 (statik sürüm) → http://127.0.0.1:${port}${basePath}/`);
+  console.log(`SecurityPoint (statik sürüm) → http://127.0.0.1:${port}${basePath}/`);
 });

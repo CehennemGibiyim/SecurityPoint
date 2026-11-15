@@ -22,7 +22,7 @@ function ThemePreview({ t }: { t: Pick<Theme, ThemeColorKey> }) {
   return (
     <div className="theme-preview" role="img" aria-label="Seçilen renklerle sayfa önizlemesi" style={{ background: t.bg, color: t.text, borderColor: line }}>
       <div className="tp-side" style={{ background: t.sidebar, borderColor: line }}>
-        <div className="tp-brand"><span style={{ background: `linear-gradient(135deg,#0ea5e9,#8b5cf6)` }} /><b>Personel26</b></div>
+        <div className="tp-brand"><span style={{ background: `linear-gradient(135deg,#0ea5e9,#8b5cf6)` }} /><b>SecurityPoint</b></div>
         {PREVIEW_NAV.map(([label, a, b], i) => (
           <div key={label} className="tp-nav" style={i === 1 ? { background: `${t.accent}26`, borderColor: `${t.accent}55` } : undefined}>
             <span style={{ background: `linear-gradient(135deg,${a},${b})` }} /><em style={{ color: i === 1 ? t.text : t.muted }}>{label}</em>
@@ -135,7 +135,7 @@ export default function ThemeSettings({ settings, setSettings, savedTheme, saved
   const list = allThemes().filter(theme => (filter === "all" || theme.category === filter) && theme.name.toLocaleLowerCase("tr").includes(q));
 
   return <div className="theme-settings">
-    <div className="theme-protection"><div className="theme-protection-icon"><ShieldCheck size={26} /></div><div><h3>Ana temanız her zaman güvende.</h3><p>Personel26’nın orijinal teması değiştirilemez. Diğer temaları deneyebilir, istediğiniz an ana temaya dönebilirsiniz. Bir tema silinir veya bozulursa panel kendiliğinden ana temaya döner.</p></div><span><LockKeyhole size={12} /> KORUMA ALTINDA</span></div>
+    <div className="theme-protection"><div className="theme-protection-icon"><ShieldCheck size={26} /></div><div><h3>Ana temanız her zaman güvende.</h3><p>SecurityPoint’nın orijinal teması değiştirilemez. Diğer temaları deneyebilir, istediğiniz an ana temaya dönebilirsiniz. Bir tema silinir veya bozulursa panel kendiliğinden ana temaya döner.</p></div><span><LockKeyhole size={12} /> KORUMA ALTINDA</span></div>
 
     <div className="settings-toggle-row theme-auto-row">
       <MonitorSmartphone size={19} />

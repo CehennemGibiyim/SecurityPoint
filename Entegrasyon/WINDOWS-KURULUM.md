@@ -1,4 +1,4 @@
-# Personel26 — Windows Kurulum Paketi
+# SecurityPoint — Windows Kurulum Paketi
 
 Bu belge, sistemi **Windows bilgisayarda kurulum veya USB/taşınabilir klasör** olarak çalıştırmak içindir.
 
@@ -9,10 +9,10 @@ Ayrıntılı adımlar, SSS ve klasör yapısı:
 
 | Paket | Dosya | Kullanım |
 | --- | --- | --- |
-| Taşınabilir (önerilen) | `windows/paket-olustur.ps1` → `Personel26-Portable\` | Klasörü kopyala, `Personel26-Baslat.vbs` (penceresiz) veya `Personel26-Baslat.bat` çift tıkla. Kurulum gerekmez. |
-| Kurulum (.exe) | `windows/paket-olustur.ps1` → `Personel26-Kurulum.exe` | Tek betik hem portable paketi hem .exe'yi üretir. Klasik İleri–İleri–Bitir kurulumu, masaüstü kısayolu. |
+| Taşınabilir (önerilen) | `windows/paket-olustur.ps1` → `SecurityPoint-Portable\` | Klasörü kopyala, `SecurityPoint-Baslat.vbs` (penceresiz) veya `SecurityPoint-Baslat.bat` çift tıkla. Kurulum gerekmez. |
+| Kurulum (.exe) | `windows/paket-olustur.ps1` → `SecurityPoint-Kurulum.exe` | Tek betik hem portable paketi hem .exe'yi üretir. Klasik İleri–İleri–Bitir kurulumu, masaüstü kısayolu. |
 
-> Sürüm numarası `package.json` içindeki `version` alanından gelir; ikon `public/brand/personel26.ico` dosyasından alınır (kısayollar, `.exe` ve tarayıcı sekmesi aynı ikonu kullanır).
+> Sürüm numarası `package.json` içindeki `version` alanından gelir; ikon `public/brand/securitypoint.ico` dosyasından alınır (kısayollar, `.exe` ve tarayıcı sekmesi aynı ikonu kullanır).
 >
 > Tek komut her şeyi yapar: derleme, portable paket, ZIP, `installer.iss` üretimi ve Inno Setup ile .exe derleme. Inno Setup kurulu değilse betik önce sessizce kurmayı dener; Visual C++ Redistributable pakete gömülüdür, temiz Windows'ta kurulum sırasında veya ilk açılışta kendiliğinden kurulur.
 
@@ -26,13 +26,13 @@ powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1
 
 Çıktı:
 
-- `Personel26-Portable\` — USB’ye kopyalanabilir klasör
-- `Personel26-Portable.zip` — arşiv
-- `windows\Personel26-Kurulum.exe` — kurulum dosyası (Inno Setup yoksa betik kendisi kurmayı dener)
+- `SecurityPoint-Portable\` — USB’ye kopyalanabilir klasör
+- `SecurityPoint-Portable.zip` — arşiv
+- `windows\SecurityPoint-Kurulum.exe` — kurulum dosyası (Inno Setup yoksa betik kendisi kurmayı dener)
 
-Yayınlanan sürümü indirmek için: depo → **Releases** (`v1.2.0`) → `Personel26-Kurulum.exe` / `Personel26-Portable.zip` + `SHA256SUMS.txt`.
+Yayınlanan sürümü indirmek için: depo → **Releases** (`v1.2.0`) → `SecurityPoint-Kurulum.exe` / `SecurityPoint-Portable.zip` + `SHA256SUMS.txt`.
 
-Hedef PC’de **`Personel26-Baslat.bat`** çalıştırın. İlk açılışta veritabanı otomatik kurulur; tarayıcı `http://127.0.0.1:3210` adresini açar. Durdurmak için `Personel26-Durdur.bat`.
+Hedef PC’de **`SecurityPoint-Baslat.bat`** çalıştırın. İlk açılışta veritabanı otomatik kurulur; tarayıcı `http://127.0.0.1:3210` adresini açar. Durdurmak için `SecurityPoint-Durdur.bat`.
 
 Verileriniz `data\` klasöründedir. Yedek = bu klasörü kopyalamak.
 

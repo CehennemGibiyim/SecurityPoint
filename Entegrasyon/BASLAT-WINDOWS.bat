@@ -9,9 +9,9 @@ echo ================================================================
 echo.
 
 :: Eger onceden uretilmis tasinabilir Windows paketi varsa dogrudan onu calistir
-if exist "%~dp0Personel26-Portable\Personel26-Baslat.bat" (
+if exist "%~dp0SecurityPoint-Portable\SecurityPoint-Baslat.bat" (
     echo [BILGI] Hazir tasinabilir Windows paketi bulundu, baslatiliyor...
-    call "%~dp0Personel26-Portable\Personel26-Baslat.bat"
+    call "%~dp0SecurityPoint-Portable\SecurityPoint-Baslat.bat"
     exit /b 0
 )
 
@@ -19,7 +19,7 @@ where node >nul 2>&1
 if %errorlevel% neq 0 (
     echo [HATA] Node.js 22 bulunamadi!
     echo Node.js olmadan calisan gomulu PostgreSQL + Node kurulum paketi icin
-    echo GitHub Actions "windows-distribution" ciktisindaki Personel26-Kurulum.exe
+    echo GitHub Actions "windows-distribution" ciktisindaki SecurityPoint-Kurulum.exe
     echo dosyasini calistirin veya https://nodejs.org adresinden Node.js 22 kurun.
     echo (Paketi kendiniz uretmek icin: windows\paket-olustur.ps1 — tek dosya yeter.)
     pause

@@ -1,12 +1,14 @@
 # ============================================================
-#  Windows sürüm yayını (GitHub Release)
+#  SecurityPoint sürüm yayını (Windows + Linux, GitHub Release)
 #
-#  Tetikleme: "v1.2.0" gibi bir etiket itildiğinde (git push origin v1.2.0)
-#  Üretilenler: Personel26-Kurulum.exe, Personel26-Portable.zip, SHA256SUMS.txt
-#  Sürüm numarası etiketten (veya elle tetiklemede girdiden) gelir ve
-#  paketleyiciye -Version ile aktarılır; package.json ile aynı olmalıdır.
+#  Tetikleme: "v1.3.0" gibi bir etiket itildiğinde (git push origin v1.3.0)
+#  Üretilenler:
+#    SecurityPoint-Kurulum.exe            (Inno Setup, gömülü Node+PostgreSQL)
+#    SecurityPoint-Portable.zip           (Windows taşınabilir)
+#    SecurityPoint-Portable-linux-x64.tar.gz (Linux taşınabilir)
+#    SHA256SUMS.txt
 # ============================================================
-name: Windows sürüm yayını
+name: SecurityPoint sürüm yayını
 
 on:
   push:
@@ -14,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Yayınlanacak sürüm (örn. 1.2.0) — etiket önceden itilmiş olmalı"
+        description: "Yayınlanacak sürüm (örn. 1.3.0) — etiket önceden itilmiş olmalı"
         required: true
 
 permissions:
@@ -25,14 +27,12 @@ defaults:
     working-directory: Entegrasyon
 
 jobs:
-  release:
+  windows:
     runs-on: windows-2025
     timeout-minutes: 45
     env:
       PUPPETEER_SKIP_DOWNLOAD: "1"
-      GH_TOKEN: ${{ github.token }}
       VERSION: ${{ inputs.version || github.ref_name }}
-      # İsteğe bağlı: PostgreSQL arşiv özetini depo değişkeni olarak sabitleyin.
       P26_PG_SHA256: ${{ vars.P26_PG_SHA256 }}
     steps:
       - uses: actions/checkout@v4
@@ -43,67 +43,160 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Bağımlılıkları kur
-        run: npm install --no-audit --no-fund
+      - run: npm install --no-audit --no-fund
+      - run: npx next typegen
+      - run: npx tsc --noEmit --pretty false
+      - run: npm run build
 
-      - name: Next.js tiplerini üret
-        run: npx next typegen
-
-      - name: TypeScript kontrolü
-        run: npx tsc --noEmit --pretty false
-
-      - name: Üretim derlemesi
-        run: npm run build
-
-      - name: Taşınabilir paket ve kurulum .exe üret
+      - name: Windows paketleri (portable + kurulum .exe)
         shell: pwsh
         run: ./windows/paket-olustur.ps1 -SkipBuild -Version $env:VERSION -PgSha256 $env:P26_PG_SHA256
 
-      - name: Sürüm notları ve SHA-256 özetleri
-        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-distribution
+          path: |
+            Entegrasyon/SecurityPoint-Portable.zip
+            Entegrasyon/windows/SecurityPoint-Kurulum.exe
+          retention-days: 7
+
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "1"
+      VERSION: ${{ inputs.version || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: npm install --no-audit --no-fund
+      - run: npx next typegen
+      - run: npx tsc --noEmit --pretty false
+      - run: npm run build
+
+      # Ubuntu 22.04 varsayılanı 14; Windows paketiyle aynı ana sürüm için PGDG 16.
+      - name: PostgreSQL 16 çalıştırıcılarını kur
         run: |
-          $version = $env:VERSION.TrimStart('v','V')
-          $tag = "v$version"
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-16
+          /usr/lib/postgresql/16/bin/postgres --version
 
-          # Etiket yoksa (elle tetikleme) yayin workflow'un calistigi commit uzerinde acilir.
-          git rev-parse --verify "refs/tags/$tag" 2>$null | Out-Null
-          if ($LASTEXITCODE -ne 0) { Write-Host "UYARI: $tag etiketi yok; yayin $env:GITHUB_SHA uzerinde olusturulacak." -ForegroundColor Yellow }
+      - name: Linux taşınabilir paketi üret
+        env:
+          P26_APP_VERSION: ${{ inputs.version || github.ref_name }}
+        run: ./linux/paket-olustur.sh --skip-build --pg-dir /usr/lib/postgresql/16
 
-          $files = @('Personel26-Portable.zip', 'windows\Personel26-Kurulum.exe')
-          foreach ($f in $files) { if (-not (Test-Path $f)) { throw "Yayin dosyasi bulunamadi: $f" } }
-          $lines = foreach ($f in $files) {
-            $hash = (Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$hash  $(Split-Path $f -Leaf)"
-          }
-          $lines | Set-Content 'SHA256SUMS.txt' -Encoding ascii
-
-          # CHANGELOG.md icindeki ilgili surum bolumu not olarak kullanilir.
-          $changelog = Get-Content '../CHANGELOG.md' -Raw
-          $pattern = "(?s)## \[$([regex]::Escape($version))\].*?(?=\r?\n## \[|\z)"
-          $notes = if ($changelog -match $pattern) { $Matches[0].Trim() } else { "## [$version]" }
-          $notes = $notes + "`n`n### Dogrulama`nIndirdikten sonra SHA256SUMS.txt ile karsilastirin:`n`n    Get-FileHash .\Personel26-Kurulum.exe -Algorithm SHA256`n"
-          $notes | Set-Content 'release-notes.md' -Encoding utf8
-
-          if (Test-Path 'Personel26-Portable\manifest.json') { Get-Content 'Personel26-Portable\manifest.json' -Raw | Write-Host }
-
-      - name: GitHub Release oluştur
-        shell: pwsh
+      - name: Paket içeriğini doğrula
         run: |
-          $version = $env:VERSION.TrimStart('v','V')
-          $tag = "v$version"
-          $assets = @('Personel26-Portable.zip', 'windows\Personel26-Kurulum.exe', 'SHA256SUMS.txt')
+          set -euo pipefail
+          TARBALL=SecurityPoint-Portable-linux-x64.tar.gz
+          test -s "$TARBALL"
+          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/app/server.js'
+          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/node/bin/node'
+          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/pgsql/bin/postgres'
+          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/schema.sql'
+          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/SecurityPoint-Yonet.sh'
+          echo "Arşiv içeriği doğrulandı."
 
-          git rev-parse --verify "refs/tags/$tag" 2>$null | Out-Null
-          $tagExists = ($LASTEXITCODE -eq 0)
+      - name: Paketi açıp gömülü çalıştırıcıları dene
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/p26 && tar -xzf SecurityPoint-Portable-linux-x64.tar.gz -C /tmp/p26
+          cd /tmp/p26/SecurityPoint-Portable
+          ./node/bin/node -v
+          LD_LIBRARY_PATH="$PWD/pgsql/lib" ./pgsql/bin/postgres --version
+          ./SecurityPoint-Yonet.sh doctor > /tmp/p26/doctor.txt 2>&1 || true
+          tail -30 /tmp/p26/doctor.txt
 
-          gh release view $tag 2>$null | Out-Null
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "Release $tag zaten var; dosyalar guncelleniyor."
-            gh release upload $tag @assets --clobber
-          } elseif ($tagExists) {
-            gh release create $tag @assets --title "Personel26 $tag" --notes-file release-notes.md
-          } else {
-            gh release create $tag @assets --title "Personel26 $tag" --notes-file release-notes.md --target $env:GITHUB_SHA
-          }
-          if ($LASTEXITCODE -ne 0) { throw "GitHub Release olusturulamadi." }
-          Write-Host "Yayin tamamlandi: $tag"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-distribution
+          path: |
+            Entegrasyon/SecurityPoint-Portable-linux-x64.tar.gz
+            Entegrasyon/SecurityPoint-Portable-linux-x64.tar.gz.sha256
+          retention-days: 7
+
+  publish:
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-distribution
+          path: dist/windows
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-distribution
+          path: dist/linux
+
+      - name: SHA-256 ve sürüm notları
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${VERSION#v}"
+          tag="v$version"
+          files=(
+            "dist/windows/SecurityPoint-Kurulum.exe"
+            "dist/windows/SecurityPoint-Portable.zip"
+            "dist/linux/SecurityPoint-Portable-linux-x64.tar.gz"
+          )
+          for f in "${files[@]}"; do [ -s "$f" ] || { echo "Eksik yayın dosyası: $f" >&2; exit 1; }; done
+          ( cd dist && sha256sum windows/SecurityPoint-Kurulum.exe windows/SecurityPoint-Portable.zip linux/SecurityPoint-Portable-linux-x64.tar.gz > SHA256SUMS.txt )
+          cat dist/SHA256SUMS.txt
+
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { capture=1 }
+            capture && /^## \[/ && $0 !~ "^## \\[" v "\\]" { exit }
+            capture { print }
+          ' CHANGELOG.md > dist/notes.md || true
+          [ -s dist/notes.md ] || echo "SecurityPoint $tag" > dist/notes.md
+          {
+            echo
+            echo "### Doğrulama"
+            echo "İndirdikten sonra SHA256SUMS.txt ile karşılaştırın:"
+            echo
+            echo '    Windows: Get-FileHash .\SecurityPoint-Kurulum.exe -Algorithm SHA256'
+            echo '    Linux  : sha256sum -c SecurityPoint-Portable-linux-x64.tar.gz.sha256'
+            echo
+            echo "Kurulum dosyası kod imzalı değildir; SmartScreen ilk çalıştırmada uyarı gösterebilir."
+          } >> dist/notes.md
+
+          git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1 || echo "UYARI: $tag etiketi yok; yayın mevcut commit üzerinde açılacak."
+          echo "$tag" > dist/tag.txt
+
+      - name: GitHub Release oluştur / güncelle
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$(cat dist/tag.txt)"
+          assets=(
+            "dist/windows/SecurityPoint-Kurulum.exe"
+            "dist/windows/SecurityPoint-Portable.zip"
+            "dist/linux/SecurityPoint-Portable-linux-x64.tar.gz"
+            "dist/SHA256SUMS.txt"
+          )
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag zaten var; dosyalar güncelleniyor."
+            gh release upload "$tag" "${assets[@]}" --clobber
+          elif git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1; then
+            gh release create "$tag" "${assets[@]}" --title "SecurityPoint $tag" --notes-file dist/notes.md
+          else
+            gh release create "$tag" "${assets[@]}" --title "SecurityPoint $tag" --notes-file dist/notes.md --target "$GITHUB_SHA"
+          fi
+          gh release view "$tag" --json url,assets --jq '.url, (.assets[] | " - " + .name)'

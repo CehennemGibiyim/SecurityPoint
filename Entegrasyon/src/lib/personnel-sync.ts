@@ -41,7 +41,7 @@ export type ExtraSyncFields = {
 };
 
 /**
- * Syncs a single ORION FaceGate employee into Personel26's `personnel` +
+ * Syncs a single ORION FaceGate employee into SecurityPoint's `personnel` +
  * `departments` + `personnel_departments` without overwriting any existing
  * official shift schedules, timesheet entries, or overrides.
  */
@@ -170,7 +170,7 @@ export async function syncFaceEmployeeToP26(
 }
 
 /**
- * Syncs a Personel26 staff member into ORION FaceGate `employees` + `face_departments`
+ * Syncs a SecurityPoint staff member into ORION FaceGate `employees` + `face_departments`
  * so staff added or imported via Puantaj26 also appear in FaceGate for biometric enrollment.
  */
 export async function syncP26PersonToFace(personId: string): Promise<void> {

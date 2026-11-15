@@ -4,8 +4,8 @@ $ReportDir = Join-Path (Get-Location) '.artifacts\windows-tests'
 New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
 $Checks = New-Object System.Collections.Generic.List[object]
 $TempRoot = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { $env:TEMP }
-$Target = Join-Path $TempRoot 'Personel26 clean installation'
-$Package = Join-Path $TempRoot 'Personel26 update source'
+$Target = Join-Path $TempRoot 'SecurityPoint clean installation'
+$Package = Join-Path $TempRoot 'SecurityPoint update source'
 $PowerShell = (Get-Command powershell.exe).Source
 $PreviousPath = $env:PATH
 $UnrelatedProcess = $null
@@ -19,7 +19,7 @@ function Assert-Check([string]$Name,[bool]$Condition) {
   Write-Host "PASS: $Name" -ForegroundColor Green
 }
 function Manager([string]$Mode,[string[]]$More=@()) {
-  & $PowerShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Target 'Personel26-Yonet.ps1') -Action $Mode -NoBrowser @More
+  & $PowerShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Target 'SecurityPoint-Yonet.ps1') -Action $Mode -NoBrowser @More
   if ($LASTEXITCODE -ne 0) { throw "Yonetim komutu basarisiz: $Mode" }
 }
 function Api([string]$Path,[string]$Method='GET',$Body=$null) {
@@ -28,8 +28,8 @@ function Api([string]$Path,[string]$Method='GET',$Body=$null) {
   return Invoke-RestMethod @args
 }
 try {
-  $Installer = (Get-ChildItem $DistributionPath -Recurse -Filter 'Personel26-Kurulum.exe' | Select-Object -First 1).FullName
-  $Zip = (Get-ChildItem $DistributionPath -Recurse -Filter 'Personel26-Portable.zip' | Select-Object -First 1).FullName
+  $Installer = (Get-ChildItem $DistributionPath -Recurse -Filter 'SecurityPoint-Kurulum.exe' | Select-Object -First 1).FullName
+  $Zip = (Get-ChildItem $DistributionPath -Recurse -Filter 'SecurityPoint-Portable.zip' | Select-Object -First 1).FullName
   if (-not $Installer -or -not $Zip) { throw 'Kurulum veya portable ZIP eksik.' }
   if (Test-Path $Target) { Remove-Item $Target -Recurse -Force }
   if (Test-Path $Package) { Remove-Item $Package -Recurse -Force }
@@ -37,9 +37,9 @@ try {
   $install = Start-Process $Installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=`"$Target`"","/LOG=`"$ReportDir\install.log`"") -Wait -PassThru
   Assert-Check 'Sessiz kullanici kurulumu' ($install.ExitCode -eq 0 -and (Test-Path (Join-Path $Target 'app\server.js')))
   # Otomatik acilis kaydi ve gunluk yedek gorevi (varsayilan isaretli gorevler).
-  $StartupFile = Join-Path ([Environment]::GetFolderPath('Startup')) 'Personel26-Baslangic.vbs'
+  $StartupFile = Join-Path ([Environment]::GetFolderPath('Startup')) 'SecurityPoint-Baslangic.vbs'
   Assert-Check 'Otomatik acilis kaydi olusturuldu' (Test-Path $StartupFile)
-  & schtasks.exe /Query /TN 'Personel26 Gunluk Yedek' | Out-Null
+  & schtasks.exe /Query /TN 'SecurityPoint Gunluk Yedek' | Out-Null
   Assert-Check 'Gunluk yedek gorevi olusturuldu' ($LASTEXITCODE -eq 0)
   # GitHub runner'lari gercek bos Windows imajlari degildir. Bu test sistemdeki
   # Node/PostgreSQL'e erisimi kapatir ve SADECE paketlenmis exe'leri kullanir.
@@ -80,7 +80,7 @@ try {
   Copy-Item (Join-Path $Target 'node\node.exe') (Join-Path $Other 'node.exe') -Force
   $UnrelatedProcess = Start-Process (Join-Path $Other 'node.exe') -ArgumentList @('-e','setInterval(()=>{},1000)') -PassThru -WindowStyle Hidden
   Manager 'Stop'
-  Assert-Check 'Yalnizca Personel26 sureci kapatildi' ($null -ne (Get-Process -Id $UnrelatedProcess.Id -ErrorAction SilentlyContinue))
+  Assert-Check 'Yalnizca SecurityPoint sureci kapatildi' ($null -ne (Get-Process -Id $UnrelatedProcess.Id -ErrorAction SilentlyContinue))
   Assert-Check 'Runtime PID temizlendi' (-not (Test-Path (Join-Path $Target 'data\runtime.json')))
   $healthAfterStop = $false
   try { $healthAfterStop = (Api '/api/health').ok } catch {}
@@ -101,18 +101,18 @@ try {
   Manager 'AutoStart'
   Manager 'AutoBackup'
   Assert-Check 'Otomatik acilis elle de acilabiliyor' (Test-Path $StartupFile)
-  & schtasks.exe /Query /TN 'Personel26 Gunluk Yedek' | Out-Null
+  & schtasks.exe /Query /TN 'SecurityPoint Gunluk Yedek' | Out-Null
   Assert-Check 'Yedek gorevi elle de olusturulabiliyor' ($LASTEXITCODE -eq 0)
   Manager 'AutoStartOff'
   Manager 'AutoBackupOff'
   Assert-Check 'Otomatik acilis kapatildi' (-not (Test-Path $StartupFile))
-  & schtasks.exe /Query /TN 'Personel26 Gunluk Yedek' | Out-Null
+  & schtasks.exe /Query /TN 'SecurityPoint Gunluk Yedek' | Out-Null
   Assert-Check 'Gunluk yedek gorevi silindi' ($LASTEXITCODE -ne 0)
 } catch {
   $_ | Out-String | Set-Content (Join-Path $ReportDir 'failure.txt') -Encoding UTF8
   throw
 } finally {
-  try { if (Test-Path (Join-Path $Target 'Personel26-Yonet.ps1')) { Manager 'Stop' } } catch {}
+  try { if (Test-Path (Join-Path $Target 'SecurityPoint-Yonet.ps1')) { Manager 'Stop' } } catch {}
   if ($UnrelatedProcess) { Stop-Process -Id $UnrelatedProcess.Id -Force -ErrorAction SilentlyContinue }
   $env:PATH = $PreviousPath
   # Baglanti sifresi ve SQL yedegi artifact'e alinmaz; yalnizca test/loglar.

@@ -230,7 +230,7 @@ export function bootstrapBrowserApp() {
       if (typeof w.__p26Reject === "function") {
         (w.__p26Reject as (e: unknown) => void)(err);
       } else {
-        console.error("[Personel26] Tarayıcı veritabanı başlatılamadı:", err);
+        console.error("[SecurityPoint] Tarayıcı veritabanı başlatılamadı:", err);
       }
     },
   );

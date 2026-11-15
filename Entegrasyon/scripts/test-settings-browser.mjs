@@ -40,7 +40,7 @@ try {
   check('Ana tema ve 23 alternatif hazır (24 tema)', await page.$$eval('.theme-card', cards => cards.length === 24));
   await clickText('.theme-card', 'Okyanus');
   check('Tema gerçek önizlemeye uygulandı', await page.evaluate(() => document.documentElement.dataset.p26Theme === 'ocean'));
-  await clickText('.theme-card', 'Personel26');
+  await clickText('.theme-card', 'SecurityPoint');
   check('Ana temaya dönüş', await page.evaluate(() => document.documentElement.dataset.p26Theme === 'original'));
   await clickText('.theme-filter button', 'Açık');
   check('Açık temalar filtrelenir', await page.$$eval('.theme-card', cards => cards.length === 6));

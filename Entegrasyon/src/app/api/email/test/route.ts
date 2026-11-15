@@ -43,8 +43,8 @@ export async function POST(request: Request) {
     await transport.sendMail({
       from: smtp.from || smtp.user,
       to: smtp.to || smtp.user,
-      subject: "[Personel26] SMTP testi",
-      text: "Tebrikler — Personel26 e-posta bildirimi çalışıyor.",
+      subject: "[SecurityPoint] SMTP testi",
+      text: "Tebrikler — SecurityPoint e-posta bildirimi çalışıyor.",
     });
     return Response.json({ ok: true });
   } catch (error) {

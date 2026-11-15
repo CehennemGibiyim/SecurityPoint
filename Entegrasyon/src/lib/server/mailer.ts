@@ -61,7 +61,7 @@ export async function sendLeaveDecisionMail(smtp: SmtpSettings, payload: LeaveMa
     await transport.sendMail({
       from: smtp.from || smtp.user,
       to: smtp.to,
-      subject: `[Personel26] İzin ${decision}: ${payload.employeeName}`,
+      subject: `[SecurityPoint] İzin ${decision}: ${payload.employeeName}`,
       text: rows.map(([key, value]) => `${key}: ${value}`).join("\n"),
       html:
         `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#0f172a">` +
@@ -73,7 +73,7 @@ export async function sendLeaveDecisionMail(smtp: SmtpSettings, payload: LeaveMa
               `<td><b>${escapeHtml(value)}</b></td></tr>`,
           )
           .join("")}</table>` +
-        `<p style="color:#94a3b8;font-size:12px;margin-top:14px">Personel26 · ORION FaceGate otomatik bildirimi</p></div>`,
+        `<p style="color:#94a3b8;font-size:12px;margin-top:14px">SecurityPoint · ORION FaceGate otomatik bildirimi</p></div>`,
     });
     return true;
   } catch (error) {

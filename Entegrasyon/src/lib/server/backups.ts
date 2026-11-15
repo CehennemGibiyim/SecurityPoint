@@ -108,7 +108,7 @@ function literal(value: unknown): string {
 }
 export async function exportSql() {
   const { data } = await snapshotAll();
-  const lines = ["-- Personel26 veri yedeği. Önce uyumlu schema.sql dosyasını kurun.", "-- UYARI: Bu SQL mevcut uygulama verilerini değiştirir. Önce yedek alın.", "-- Oluşturulma: " + new Date().toISOString(), "BEGIN;", "SET standard_conforming_strings = on;"];
+  const lines = ["-- SecurityPoint veri yedeği. Önce uyumlu schema.sql dosyasını kurun.", "-- UYARI: Bu SQL mevcut uygulama verilerini değiştirir. Önce yedek alın.", "-- Oluşturulma: " + new Date().toISOString(), "BEGIN;", "SET standard_conforming_strings = on;"];
   for (const key of DELETE_ORDER) lines.push(`DELETE FROM public.\"${getTableName(BACKUP_TABLES[key])}\";`);
   for (const key of keys) {
     const columns = getTableColumns(BACKUP_TABLES[key]);

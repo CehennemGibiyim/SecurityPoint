@@ -1,12 +1,12 @@
 # ORION FaceGate × Puantaj26 — Tek Klasörde Tam Birleşik Platform
 
-Bu proje, **ORION FaceGate (`Face`)** biyometrik yüz tanımalı PDKS konsolu (tüm orijinal koyu-altın-camgöbeği arayüzü, görselleri, 3D canlılık destekli Biyometrik Stüdyosu, Yüz Terminali, Kapılar & Yetkiler altyapısı ve personel oluşturma akışı %100 korunarak) ile **Puantaj26 (`Personel26`)** resmi hastane/kurum nöbet, puantaj, maaş bordro, izin onay ve yedekleme sisteminin **tek bir klasör, tek bir veritabanı ve tek bir arayüz çatısı altında** birleştirilmiş tam sürümüdür.
+Bu proje, **ORION FaceGate (`Face`)** biyometrik yüz tanımalı PDKS konsolu (tüm orijinal koyu-altın-camgöbeği arayüzü, görselleri, 3D canlılık destekli Biyometrik Stüdyosu, Yüz Terminali, Kapılar & Yetkiler altyapısı ve personel oluşturma akışı %100 korunarak) ile **Puantaj26 (`SecurityPoint`)** resmi hastane/kurum nöbet, puantaj, maaş bordro, izin onay ve yedekleme sisteminin **tek bir klasör, tek bir veritabanı ve tek bir arayüz çatısı altında** birleştirilmiş tam sürümüdür.
 
 ---
 
 ## Birleştirme Mimarisi
 
-1. **Tek Klasör, Tek Sunucu / Tek Çatı (`Face` + `Personel26` Birleşik)**:
+1. **Tek Klasör, Tek Sunucu / Tek Çatı (`Face` + `SecurityPoint` Birleşik)**:
    - İki ayrı port (`3000` ve `3001`) veya iki ayrı proje klasörü tamamen kaldırıldı; tüm sistem doğrudan kök dizinde tek uygulama olarak çalışır.
    - **ORION FaceGate** konsolunun sol menüsüne **Puantaj26 Resmi Sistem** başlığı altında tüm 12 resmi Puantaj26 modülü (`Puantaj Cetveli`, `Nöbet Çizelgesi`, `Maaş Bordro (Resmi)`, `Vardiya Şablonları`, `Servis & Kadro Yönetimi`, `Resmi İzin Onayları`, `Nöbet Değişimi (Takas)`, `Adalet Analizi`, `Mevzuat Uyarıları`, `Servis Duyuruları`, `Veri Yedekleme`, `Kurum & Sistem Ayarları`) ve `TC Personel Sorgu` ekranı doğrudan entegre edildi.
 2. **Çift Yönlü Otomatik Personel & Birim Senkronizasyonu**:
@@ -26,7 +26,7 @@ Depoyu `https://github.com/CehennemGibiyim/Entegrasyon` adresinin kök dizinine 
    - GitHub deponuzda bir kez **Settings → Pages → Build and deployment → Source: `GitHub Actions`** seçin.
    - Her `push` sonrasında uygulama otomatik derlenir (`node scripts/pages-build.mjs`), tarayıcı içi gerçek PostgreSQL motoru (**PGlite / WASM + IndexedDB**) ile paketlenir ve doğrudan **`https://cehennemgibiyim.github.io/Entegrasyon/`** adresinde hem **ORION FaceGate** hem **Puantaj26** tüm özellikleriyle çalışır!
 2. **Otomatik Windows Kurulum `.exe` & Taşınabilir `.zip` Üretimi (`.github/workflows/windows-test.yml`)**:
-   - GitHub Actions üzerinde temiz Windows sunucularında hem **`Personel26-Kurulum.exe`** (Inno Setup kurulum sihirbazı — içinde gömülü Node.js 22 + PostgreSQL 16 ile hiçbir ek kurulum gerektirmeden çalışır) hem **`Personel26-Portable.zip`** otomatik üretilir ve **Actions → Artifacts (`windows-distribution`)** altından indirilebilir.
+   - GitHub Actions üzerinde temiz Windows sunucularında hem **`SecurityPoint-Kurulum.exe`** (Inno Setup kurulum sihirbazı — içinde gömülü Node.js 22 + PostgreSQL 16 ile hiçbir ek kurulum gerektirmeden çalışır) hem **`SecurityPoint-Portable.zip`** otomatik üretilir ve **Actions → Artifacts (`windows-distribution`)** altından indirilebilir.
 3. **Fullstack PostgreSQL & Tarayıcı Test Doğrulaması (`.github/workflows/validation.yml`)**:
    - Her değişiklikte gerçek PostgreSQL 16 + Puppeteer arayüz testleri + PGlite duman testlerini otomatik çalıştırır.
 
@@ -35,8 +35,8 @@ Depoyu `https://github.com/CehennemGibiyim/Entegrasyon` adresinin kök dizinine 
 ## 2. Windows Bilgisayarda Kurulum ve Çalıştırma
 
 ### Seçenek A — Sıfır Kurulumlu Kurulum Sihirbazı / Taşınabilir Paket (Önerilen)
-- GitHub Actions **Actions → Windows paketleme ve kurulum testleri → `windows-distribution`** bölümünden indirdiğiniz **`Personel26-Kurulum.exe`** dosyasını çift tıklayarak kurun (veya kendi bilgisayarınızda tek betikle üretmek için `powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1` çalıştırın).
-- Masaüstüne gelen kısayol veya `Personel26-Baslat.bat` gömülü PostgreSQL 16 ve Node.js 22'yi otomatik başlatıp birleşik **ORION FaceGate × Puantaj26** ekranını açar.
+- GitHub Actions **Actions → Windows paketleme ve kurulum testleri → `windows-distribution`** bölümünden indirdiğiniz **`SecurityPoint-Kurulum.exe`** dosyasını çift tıklayarak kurun (veya kendi bilgisayarınızda tek betikle üretmek için `powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1` çalıştırın).
+- Masaüstüne gelen kısayol veya `SecurityPoint-Baslat.bat` gömülü PostgreSQL 16 ve Node.js 22'yi otomatik başlatıp birleşik **ORION FaceGate × Puantaj26** ekranını açar.
 
 ### Seçenek B — Geliştirici Modunda Hızlı Başlatma
 1. `.env.example` dosyasını `.env` olarak kopyalayıp `DATABASE_URL` bağlantınızı girin.
