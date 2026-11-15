@@ -35,6 +35,14 @@ SecurityPoint/
 - **Doğrulama:** `validation.yml` gerçek PostgreSQL servisi üzerinde typecheck, build, API ve
   tarayıcı köprüsü testlerini çalıştırır.
 
+## Sürüm yayını
+
+- **Sürüm numarasının tek kaynağı:** `Entegrasyon/package.json` → `version`. Kurulum `.exe`'sinin dosya özellikleri, `manifest.json`, README ve paneldeki sürüm göstergesi bu değerden üretilir; elle çoğaltılmaz.
+- **Uygulama ikonu:** `Entegrasyon/public/brand/personel26.ico` — 9 katmanlı (16–256 px), `scripts/ikon-uret.py` ile `orion-face-aurora.png` kaynağından üretilir. Kurulum `.exe`'si, Başlat menüsü/masaüstü kısayolları, kaldırma girdisi ve tarayıcı favicon'u aynı ikonu kullanır.
+- **Otomatik yayın:** `git tag v1.2.0 && git push origin v1.2.0` → `.github/workflows/release.yml` derler ve **GitHub Release**'e `Personel26-Kurulum.exe`, `Personel26-Portable.zip` ve `SHA256SUMS.txt` ekler.
+- **Değişiklikler:** [CHANGELOG.md](CHANGELOG.md).
+- İndirilen dosyanın bütünlüğü: `Get-FileHash .\Personel26-Kurulum.exe -Algorithm SHA256` (özet `SHA256SUMS.txt` ile karşılaştırılır). Kurulum dosyası kod imzalı değildir; SmartScreen ilk çalıştırmada uyarı gösterebilir.
+
 ## Yerel geliştirme (Entegrasyon/ altında)
 
 ```bash

@@ -1,15 +1,16 @@
-# Personel26 — Windows 1.1.0
+# Personel26 — Windows 1.2.0
 
 ## Son kullanıcı
 
 Node.js ve PostgreSQL ayrıca kurulmaz: paket kendi Windows x64 çalıştırıcılarını içerir. Kurulum kullanıcı klasörüne yapılır ve yönetici yetkisi gerektirmez.
 
+- **Personel26-Baslat.vbs**: aynı işi **komut penceresi açmadan** yapar (önerilen yol).
 - **Personel26-Baslat.bat**: veritabanını ilk kullanımda kurar, veri silmeyen şema güncellemelerini uygular, sunucuyu başlatır ve tarayıcıyı açar.
 - **Personel26-Durdur.bat**: sadece paketin PID dosyasındaki, yolu doğrulanmış Node sürecini ve kendi PostgreSQL kümesini kapatır. Diğer Node uygulamalarını kapatmaz.
 - **Personel26-Yedekle.bat**: `data/backups` içine yerel PostgreSQL SQL yedeği oluşturur.
 - Panelde **Ayarlar → Yedekleme & Veritabanı**: JSON yedeği, SQL dışa aktarma, doğrulanmış dosyadan geri yükleme ve şema güncelleme.
 
-Adres: `http://127.0.0.1:3210`. PostgreSQL yalnızca `127.0.0.1:5433` üzerinde dinler. İlk kurulumda rastgele veritabanı parolası üretilir ve mevcut kullanıcıya özel izinlerle `data/connection.json` içinde saklanır. Bu dosyayı paylaşmayın.
+Adres: `http://127.0.0.1:3210`. PostgreSQL yalnızca `127.0.0.1:5433` üzerinde dinler. Bu iki port başka bir uygulama tarafından kullanılıyorsa başlatıcı veritabanına dokunmadan anlaşılır bir hata verir. İlk kurulumda rastgele veritabanı parolası üretilir ve mevcut kullanıcıya özel izinlerle `data/connection.json` içinde saklanır. Bu dosyayı paylaşmayın.
 
 ## SQL şema ile veri yedeği farklıdır
 
@@ -67,7 +68,25 @@ Geliştirici makinesinde Node.js 22+ gerekir. Son kullanıcıda gerekmez.
 
 `powershell -ExecutionPolicy Bypass -File windows\paket-olustur.ps1`
 
-Paketleyici tek dosyadır (`windows/paket-olustur.ps1`): tip üretimini, TypeScript ve üretim derlemesini kontrol eder; sabitlenmiş Node.js 22.22.3, PostgreSQL 16.13-1 x64 ve **Microsoft Visual C++ Redistributable** dosyalarını indirir. Node arşivi resmi SHA-256 ile, Visual C++ kurucusu Microsoft imzası ile doğrulanır. Geliştirme `.env` dosyaları çıkarılır. `manifest.json` sürüm ve arşiv hashlerini içerir. Ardından `installer.iss` dosyasını **kendi içinde üretir** ve Inno Setup 6 ile `Personel26-Kurulum.exe`'yi derler — Inno Setup kurulu değilse önce sessizce kurmayı dener (winget, sonra choco). Yalnızca taşınabilir paket için `-NoExe`, yalnızca ZIP için `-NoExe -NoZip` bayraklarını kullanın.
+Sürüm numarası **tek kaynaktan** gelir: `package.json` içindeki `version`. Gerekirse `-Version 1.2.1` ile ezilir; kurulum `.exe`'sinin dosya özellikleri, `manifest.json` ve paneldeki sürüm göstergesi aynı değeri kullanır.
+
+Uygulama ikonu `public/brand/personel26.ico` dosyasıdır (`python3 scripts/ikon-uret.py` ile `public/brand/orion-face-aurora.png` kaynağından yeniden üretilir). Kurulum `.exe`'si, Başlat menüsü/masaüstü kısayolları, kaldırma girdisi ve tarayıcı favicon'u bu ikonu kullanır.
+
+Paketleyici tek dosyadır (`windows/paket-olustur.ps1`): tip üretimini, TypeScript ve üretim derlemesini kontrol eder; sabitlenmiş Node.js 22.22.3, PostgreSQL 16.13-1 x64 ve **Microsoft Visual C++ Redistributable** dosyalarını indirir. Node arşivi resmi SHA-256 ile, Visual C++ kurucusu Microsoft imzası ile doğrulanır. Geliştirme `.env` dosyaları çıkarılır. `manifest.json` sürüm ve arşiv hashlerini içerir. PostgreSQL arşivi için `-PgSha256` verilirse SHA-256 zorunlu olarak doğrulanır; verilmezse hesaplanan özet uyarıyla birlikte yazılır (ilk güvenilir derlemeden sonra sabitleyin: CI'da `P26_PG_SHA256` depo değişkeni). Ardından `installer.iss` dosyasını **kendi içinde üretir** ve Inno Setup 6 ile `Personel26-Kurulum.exe`'yi derler — Inno Setup kurulu değilse önce sessizce kurmayı dener (winget, sonra choco). Yalnızca taşınabilir paket için `-NoExe`, yalnızca ZIP için `-NoExe -NoZip` bayraklarını kullanın.
+
+## Sürüm yayını (GitHub Release)
+
+Etiket itildiğinde `.github/workflows/release.yml` devreye girer:
+
+`git tag v1.2.0 && git push origin v1.2.0`
+
+İş akışı derlemeyi yapar, `Personel26-Kurulum.exe`, `Personel26-Portable.zip` ve `SHA256SUMS.txt` dosyalarını GitHub Release'e ekler; sürüm notları `CHANGELOG.md` içindeki ilgili bölümden alınır. Etiket sürümü `package.json` sürümüyle aynı olmalıdır.
+
+İndirilen dosyanın bütünlüğünü doğrulama:
+
+`Get-FileHash .\Personel26-Kurulum.exe -Algorithm SHA256`
+
+> Kurulum `.exe`'si kod imzalı değildir; Windows SmartScreen ilk çalıştırmada "bilinmeyen yayıncı" uyarısı gösterebilir. Kurumsal dağıtımda imza sertifikası (Azure Trusted Signing ücretlidir) veya grup ilkesiyle güvenilir konum tanımı gerekir.
 
 ## Otomatik Windows testleri
 

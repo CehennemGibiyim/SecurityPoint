@@ -47,6 +47,15 @@ function Set-AutoBackup([bool]$Enable) {
     Write-Host 'Gunluk otomatik yedek gorevi silindi.'
   }
 }
+# Port cakismasi: baska bir uygulama 3210/5433'u dinliyorsa anlasilir hata ver.
+function Test-PortListening([int]$Port) {
+  $client = New-Object Net.Sockets.TcpClient
+  try {
+    $task = $client.ConnectAsync('127.0.0.1', $Port)
+    if ($task.Wait(500) -and $client.Connected) { return $true }
+    return $false
+  } catch { return $false } finally { $client.Dispose() }
+}
 function Invoke-Pg([string]$Tool, [string[]]$Arguments) {
   $Executable = Join-Path $PgBin ($Tool + '.exe')
   if (-not (Test-Path $Executable)) { throw "Pakette $Tool bulunamadi." }
@@ -115,6 +124,7 @@ function Start-PgServer {
   $pgCtl = Join-Path $PgBin 'pg_ctl.exe'
   $isReady = Join-Path $PgBin 'pg_isready.exe'
   $log = Join-Path $Data 'postgres.log'
+  if (Test-PortListening ([int]$Config.pgPort)) { throw "PostgreSQL portu ($($Config.pgPort)) baska bir uygulama tarafindan kullaniliyor. Baska bir PostgreSQL kurulumunu kapatip tekrar deneyin." }
   $args = @('start','-D',('"' + $PgData + '"'),'-o',('"-p ' + $Config.pgPort + ' -c listen_addresses=127.0.0.1"'),'-l',('"' + $log + '"'))
   Start-Process -FilePath $pgCtl -ArgumentList $args -WindowStyle Hidden | Out-Null
   for ($i = 0; $i -lt 60; $i++) {
@@ -154,12 +164,13 @@ function Wait-Health {
   throw 'Uygulama saglik kontrolu gecmedi. data/app-error.log dosyasini inceleyin.'
 }
 function Start-App {
-  Ensure-Database
   if (Test-Path $RuntimeFile) {
     $runtime = Get-Content $RuntimeFile -Raw | ConvertFrom-Json
     $running = Get-Process -Id $runtime.pid -ErrorAction SilentlyContinue
     if ($running -and $running.Path -eq (Join-Path $Root 'node\node.exe')) { Wait-Health; return }
   }
+  if (Test-PortListening ([int]$Config.appPort)) { throw "Uygulama portu ($($Config.appPort)) baska bir uygulama tarafindan kullaniliyor. O uygulamayi kapatip Personel26'yi tekrar baslatin." }
+  Ensure-Database
   $encoded = [Uri]::EscapeDataString($Config.password)
   $env:DATABASE_URL = "postgresql://$($Config.user):${encoded}@127.0.0.1:$($Config.pgPort)/$($Config.database)"
   $env:PORT = [string]$Config.appPort

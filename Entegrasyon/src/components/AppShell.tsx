@@ -23,6 +23,7 @@ import NotesPage from "@/components/NotesPage";
 import BackupPage from "@/components/BackupPage";
 import SettingsPage from "@/components/SettingsPage";
 import { DEFAULT_SETTINGS, type AppSettings } from "@/lib/settings";
+import { APP_VERSION_LABEL } from "@/lib/version";
 
 export type PageKey =
   | "nobet" | "puantaj" | "bordro" | "sablon" | "personel" | "izin" | "degisim"
@@ -331,7 +332,7 @@ export default function AppShell({
         {page === "ayarlar" && <div className="settings-sidebar-footer">
           <div className="sidebar-workspace"><Database size={16} /><div><b>Kurum çalışma alanı</b><small>{departments.length > 0 ? "PostgreSQL bağlantısı etkin" : "Bağlantı hazırlanıyor"}</small></div></div>
           <div className="sidebar-user-card"><span className="user-avatar">YK</span><div><b>Yönetici</b><small>Kurum yönetimi</small></div><details className="sidebar-tools"><summary aria-label="Ek araçlar"><Ellipsis size={17} /></summary><div><Link href="/personel-sorgu" target="_blank"><Fingerprint size={14} /> Personel sorgu ekranı</Link><PreviewDownloadButton /></div></details></div>
-          <div className="sidebar-version"><LockKeyhole size={9} /> Kurum içi kullanım<span>v1.1.0</span></div>
+          <div className="sidebar-version"><LockKeyhole size={9} /> Kurum içi kullanım<span>{APP_VERSION_LABEL || "geliştirme"}</span></div>
         </div>}
       </aside>}
       {!embedded && sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />}

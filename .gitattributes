@@ -1,0 +1,26 @@
+# Satır sonları: Windows betikleri CRLF olmalı (etiket/goto ve PowerShell ayrıştırması için).
+* text=auto
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.iss text eol=crlf
+*.vbs text eol=crlf
+*.sh text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.py text eol=lf
+
+# İkili varlıklar (dönüştürme yok)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.bin binary
+*.zip binary
+*.exe binary
+*.woff binary
+*.woff2 binary
