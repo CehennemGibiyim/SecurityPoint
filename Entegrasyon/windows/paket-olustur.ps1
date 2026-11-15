@@ -282,7 +282,9 @@ end;
 '@
   $IssPath = Join-Path $Cache 'installer-generated.iss'
   $IssContent = $IssTemplate.Replace('@@PORTABLEDIR@@', $Out).Replace('@@OUTPUTDIR@@', $PSScriptRoot).Replace('@@APPVERSION@@', $Version).Replace('@@APPVERSIONQUAD@@', $VersionQuad).Replace('@@ICONFILE@@', $IconFile)
-  Set-Content -Path $IssPath -Value $IssContent -Encoding UTF8
+  # Inno Setup, BOM'suz UTF-8 dosyayi ANSI sanip Turkce karakterleri bozar;
+  # bu yuzden .iss her zaman BOM'lu UTF-8 olarak yazilir.
+  [IO.File]::WriteAllText($IssPath, $IssContent, [Text.UTF8Encoding]::new($true))
 
   $ExePath = Join-Path $PSScriptRoot 'Personel26-Kurulum.exe'
   if (Test-Path $ExePath) { Remove-Item $ExePath -Force }
