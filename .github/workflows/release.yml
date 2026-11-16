@@ -52,15 +52,15 @@ jobs:
         shell: pwsh
         run: ./windows/paket-olustur.ps1 -SkipBuild -Version $env:VERSION -PgSha256 $env:P26_PG_SHA256
 
-      # Artifact, yolların ortak kökünü koruyup alt klasör üretiyor; bu yüzden
-      # dosyalar düz bir klasöre kopyalanıp yüklenir.
+      # Artifact yolları çalışma alanı köküne göre çözülür; run adımları ise
+      # defaults ile Entegrasyon/ içinde çalışır. Bu yüzden dosyalar ../dist'e taşınır.
       - name: Yayın dosyalarını hazırla
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist/windows | Out-Null
-          Copy-Item Entegrasyon/SecurityPoint-Portable.zip dist/windows/
-          Copy-Item Entegrasyon/windows/SecurityPoint-Kurulum.exe dist/windows/
-          Get-ChildItem dist/windows | Select-Object Name, Length | Format-Table
+          New-Item -ItemType Directory -Force -Path ../dist/windows | Out-Null
+          Copy-Item SecurityPoint-Portable.zip ../dist/windows/
+          Copy-Item windows/SecurityPoint-Kurulum.exe ../dist/windows/
+          Get-ChildItem ../dist/windows | Select-Object Name, Length | Format-Table
 
       - uses: actions/upload-artifact@v4
         with:
@@ -133,9 +133,9 @@ jobs:
       - name: Yayın dosyalarını hazırla
         run: |
           set -euo pipefail
-          mkdir -p dist/linux
-          cp Entegrasyon/SecurityPoint-Portable-linux-x64.tar.gz* dist/linux/
-          ls -l dist/linux
+          mkdir -p ../dist/linux
+          cp SecurityPoint-Portable-linux-x64.tar.gz ../dist/linux/
+          ls -l ../dist/linux
 
       - uses: actions/upload-artifact@v4
         with:
@@ -167,6 +167,8 @@ jobs:
 
       - name: SHA-256 ve sürüm notları
         shell: bash
+        # Sürüm notları ve dist/ çalışma alanının kökünde; defaults.Entegrasyon'u geçersiz kılar.
+        working-directory: ${{ github.workspace }}
         run: |
           set -euo pipefail
           version="${VERSION#v}"
@@ -203,6 +205,7 @@ jobs:
 
       - name: GitHub Release oluştur / güncelle
         shell: bash
+        working-directory: ${{ github.workspace }}
         run: |
           set -euo pipefail
           tag="$(cat dist/tag.txt)"
