@@ -98,12 +98,19 @@ jobs:
           set -euo pipefail
           TARBALL=SecurityPoint-Portable-linux-x64.tar.gz
           test -s "$TARBALL"
-          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/app/server.js'
-          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/node/bin/node'
-          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/pgsql/bin/postgres'
-          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/schema.sql'
-          tar -tzf "$TARBALL" | grep -qx 'SecurityPoint-Portable/SecurityPoint-Yonet.sh'
-          echo "Arşiv içeriği doğrulandı."
+          # Not: `tar | grep -q` pipefail altında SIGPIPE ile düşer; liste dosyaya alınır.
+          tar -tzf "$TARBALL" > /tmp/archive-list.txt
+          for path in app/server.js node/bin/node pgsql/bin/postgres schema.sql \
+                      schema-update.sql SecurityPoint-Yonet.sh SecurityPoint-Baslat.sh \
+                      securitypoint.desktop brand/securitypoint.png manifest.json; do
+            grep -qx "SecurityPoint-Portable/$path" /tmp/archive-list.txt \
+              || { echo "Eksik dosya: $path" >&2; exit 1; }
+          done
+          for dir in app/public/models pgsql/lib app/.next/static; do
+            grep -q "^SecurityPoint-Portable/$dir/" /tmp/archive-list.txt \
+              || { echo "Eksik klasör: $dir" >&2; exit 1; }
+          done
+          echo "Arşiv içeriği doğrulandı: $(wc -l < /tmp/archive-list.txt) giriş"
 
       - name: Paketi açıp gömülü çalıştırıcıları dene
         run: |
