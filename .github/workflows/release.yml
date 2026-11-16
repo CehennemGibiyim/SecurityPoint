@@ -52,12 +52,20 @@ jobs:
         shell: pwsh
         run: ./windows/paket-olustur.ps1 -SkipBuild -Version $env:VERSION -PgSha256 $env:P26_PG_SHA256
 
+      # Artifact, yolların ortak kökünü koruyup alt klasör üretiyor; bu yüzden
+      # dosyalar düz bir klasöre kopyalanıp yüklenir.
+      - name: Yayın dosyalarını hazırla
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/windows | Out-Null
+          Copy-Item Entegrasyon/SecurityPoint-Portable.zip dist/windows/
+          Copy-Item Entegrasyon/windows/SecurityPoint-Kurulum.exe dist/windows/
+          Get-ChildItem dist/windows | Select-Object Name, Length | Format-Table
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows-distribution
-          path: |
-            Entegrasyon/SecurityPoint-Portable.zip
-            Entegrasyon/windows/SecurityPoint-Kurulum.exe
+          path: dist/windows/
           retention-days: 7
 
   linux:
@@ -122,12 +130,17 @@ jobs:
           ./SecurityPoint-Yonet.sh doctor > /tmp/p26/doctor.txt 2>&1 || true
           tail -30 /tmp/p26/doctor.txt
 
+      - name: Yayın dosyalarını hazırla
+        run: |
+          set -euo pipefail
+          mkdir -p dist/linux
+          cp Entegrasyon/SecurityPoint-Portable-linux-x64.tar.gz* dist/linux/
+          ls -l dist/linux
+
       - uses: actions/upload-artifact@v4
         with:
           name: linux-distribution
-          path: |
-            Entegrasyon/SecurityPoint-Portable-linux-x64.tar.gz
-            Entegrasyon/SecurityPoint-Portable-linux-x64.tar.gz.sha256
+          path: dist/linux/
           retention-days: 7
 
   publish:
@@ -158,6 +171,7 @@ jobs:
           set -euo pipefail
           version="${VERSION#v}"
           tag="v$version"
+          echo "İndirilen yayın dosyaları:"; find dist -type f -printf '  %p (%s bayt)\n' | sort
           files=(
             "dist/windows/SecurityPoint-Kurulum.exe"
             "dist/windows/SecurityPoint-Portable.zip"
